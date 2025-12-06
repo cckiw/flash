@@ -1870,6 +1870,7 @@ Reply ONLY in the specified format, without additional explanations.`;
     width: 100%;
     max-width: 340px;
     height: 400px;
+    max-height: 300px;
     perspective: 1000px;
     cursor: grab;
     user-select: none;
