@@ -1,6 +1,7 @@
 <script>
   import { cardsStore } from '../stores/cards.js';
   import { targetLanguage, getLanguageName, getLanguageNameEn } from '../stores/language.js';
+  import { currentDictionary as currentDictionaryStore } from '../stores/dictionaries.js';
   import { flip } from 'svelte/animate';
   
   $: languageName = getLanguageName($targetLanguage);
@@ -205,21 +206,33 @@ Reply ONLY with the sentence in Russian, without quotes or explanations.`;
     return shuffled;
   }
   
-  $: allCards = $cardsStore.unlearned;
+  // Получаем активный словарь из store (реактивно)
+  $: currentDictionary = $currentDictionaryStore || 'default';
   
-  // Перемешиваем только при изменении набора карточек (добавление/удаление)
+  // Фильтруем карточки по активному словарю
+  $: allCards = $cardsStore.unlearned.filter(c => {
+    const cardDictId = c.dictionaryId || 'default';
+    return cardDictId === currentDictionary;
+  });
+  
+  // Отслеживаем предыдущий словарь для сброса при переключении
+  let previousDictionary = currentDictionary;
+  
+  // Перемешиваем только при изменении набора карточек (добавление/удаление) или при смене словаря
   $: {
     const currentIds = new Set(allCards.map(c => c.id));
+    const dictionaryChanged = previousDictionary !== currentDictionary;
     
-    // Проверяем, изменился ли набор ID (не порядок)
+    // Проверяем, изменился ли набор ID (не порядок) или словарь
     const idsChanged = currentIds.size !== lastCardIds.size || 
       ![...currentIds].every(id => lastCardIds.has(id));
     
-    if (idsChanged) {
-      // Новые карточки — полностью перемешиваем
+    if (dictionaryChanged || idsChanged) {
+      // Новые карточки или смена словаря — полностью перемешиваем
       shuffledCards = shuffleArray(allCards);
       lastCardIds = currentIds;
       currentIndex = 0;
+      previousDictionary = currentDictionary;
     } else {
       // Набор ID тот же — просто обновляем данные карточек без перемешивания
       shuffledCards = shuffledCards.map(card => {

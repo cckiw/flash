@@ -24,6 +24,18 @@ function createCardsStore() {
     initial.draft = [];
   }
 
+  // Миграция: добавить dictionaryId к старым карточкам
+  const addDictionaryIdToCards = (list) => {
+    return list.map(card => ({
+      ...card,
+      dictionaryId: card.dictionaryId || 'default'
+    }));
+  };
+  
+  initial.learned = addDictionaryIdToCards(initial.learned);
+  initial.unlearned = addDictionaryIdToCards(initial.unlearned);
+  initial.draft = addDictionaryIdToCards(initial.draft);
+
   // Очистка дубликатов ID
   const seenIds = new Set();
   const cleanupDuplicates = (list) => {
@@ -39,12 +51,17 @@ function createCardsStore() {
   initial.learned = cleanupDuplicates(initial.learned);
   initial.unlearned = cleanupDuplicates(initial.unlearned);
   initial.draft = cleanupDuplicates(initial.draft);
+  
+  // Сохраняем обновленные данные с dictionaryId
+  if (typeof localStorage !== 'undefined' && stored) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+  }
 
   const { subscribe, set, update } = writable(initial);
 
   return {
     subscribe,
-    addCard: (word, translation, association = '', imageUrl = '') => {
+    addCard: (word, translation, association = '', imageUrl = '', dictionaryId = 'default') => {
       update(state => {
         const newCard = {
           id: Date.now(),
@@ -52,6 +69,7 @@ function createCardsStore() {
           translation,
           association,
           imageUrl,
+          dictionaryId,
           createdAt: new Date().toISOString()
         };
         const newState = {
@@ -139,7 +157,7 @@ function createCardsStore() {
         return newState;
       });
     },
-    addDraftCards: (words) => {
+    addDraftCards: (words, dictionaryId = 'default') => {
       update(state => {
         // Получаем существующие слова для проверки дубликатов
         const existingWords = new Set([
@@ -157,6 +175,7 @@ function createCardsStore() {
             translation: '',
             association: '',
             imageUrl: '',
+            dictionaryId,
             createdAt: new Date().toISOString(),
             isDraft: true
           }));
@@ -222,11 +241,32 @@ function createCardsStore() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
       set(initial);
     },
-    importCards: (data) => {
+    resetDictionary: (dictionaryId) => {
+      update(state => {
+        const newState = {
+          learned: state.learned.filter(c => (c.dictionaryId || 'default') !== dictionaryId),
+          unlearned: state.unlearned.filter(c => (c.dictionaryId || 'default') !== dictionaryId),
+          draft: state.draft.filter(c => (c.dictionaryId || 'default') !== dictionaryId)
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+        return newState;
+      });
+    },
+    importCards: (data, dictionaryId) => {
       update(state => {
         const newUnlearned = data.unlearned || [];
         const newLearned = data.learned || [];
         const newDraft = data.draft || [];
+        
+        // Всегда присваиваем указанный dictionaryId (перезаписываем существующий)
+        const addDictionaryId = (cards) => cards.map(card => ({
+          ...card,
+          dictionaryId: dictionaryId || 'default'
+        }));
+        
+        const processedUnlearned = addDictionaryId(newUnlearned);
+        const processedLearned = addDictionaryId(newLearned);
+        const processedDraft = addDictionaryId(newDraft);
         
         // Добавляем новые карточки, избегая дубликатов по слову
         const existingWords = new Set([
@@ -235,9 +275,9 @@ function createCardsStore() {
           ...state.draft.map(c => c.word.toLowerCase())
         ]);
         
-        const filteredUnlearned = newUnlearned.filter(c => !existingWords.has(c.word.toLowerCase()));
-        const filteredLearned = newLearned.filter(c => !existingWords.has(c.word.toLowerCase()));
-        const filteredDraft = newDraft.filter(c => !existingWords.has(c.word.toLowerCase()));
+        const filteredUnlearned = processedUnlearned.filter(c => !existingWords.has(c.word.toLowerCase()));
+        const filteredLearned = processedLearned.filter(c => !existingWords.has(c.word.toLowerCase()));
+        const filteredDraft = processedDraft.filter(c => !existingWords.has(c.word.toLowerCase()));
         
         const newState = {
           learned: [...state.learned, ...filteredLearned],
@@ -247,7 +287,7 @@ function createCardsStore() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
         return newState;
       });
-    }
+    },
   };
 }
 

@@ -1,6 +1,7 @@
 <script>
   import { cardsStore } from '../stores/cards.js';
   import { targetLanguage, getLanguageName } from '../stores/language.js';
+  import { currentDictionary as currentDictionaryStore } from '../stores/dictionaries.js';
   
   $: languageName = getLanguageName($targetLanguage);
   
@@ -45,9 +46,22 @@
     editImageUrl !== originalImageUrl
   );
   
-  $: learned = $cardsStore.learned;
-  $: unlearned = $cardsStore.unlearned;
-  $: draft = $cardsStore.draft || [];
+  // Получаем активный словарь из store (реактивно)
+  $: currentDictionary = $currentDictionaryStore || 'default';
+  
+  // Фильтруем карточки по активному словарю
+  $: learned = $cardsStore.learned.filter(c => {
+    const cardDictId = c.dictionaryId || 'default';
+    return cardDictId === currentDictionary;
+  });
+  $: unlearned = $cardsStore.unlearned.filter(c => {
+    const cardDictId = c.dictionaryId || 'default';
+    return cardDictId === currentDictionary;
+  });
+  $: draft = ($cardsStore.draft || []).filter(c => {
+    const cardDictId = c.dictionaryId || 'default';
+    return cardDictId === currentDictionary;
+  });
   $: baseList = activeTab === 'learned' ? learned : activeTab === 'unlearned' ? unlearned : draft;
   
   // Фильтрация по поиску
@@ -137,10 +151,12 @@
   }
   
   function exportToJson() {
+    // Экспортируем только карточки активного словаря
     const data = {
-      learned: $cardsStore.learned,
-      unlearned: $cardsStore.unlearned,
-      draft: $cardsStore.draft || [],
+      learned: learned,
+      unlearned: unlearned,
+      draft: draft,
+      language: $targetLanguage || 'en',
       exportedAt: new Date().toISOString()
     };
     const json = JSON.stringify(data, null, 2);
@@ -703,7 +719,7 @@
   .tabs-desktop {
     display: none;
     gap: 0.5rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     background: var(--card-bg);
     padding: 0.5rem;
     border-radius: 16px;

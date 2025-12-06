@@ -1,9 +1,21 @@
 <script>
+  import { onMount } from 'svelte';
   import AddCard from './components/AddCard.svelte';
   import FlashCards from './components/FlashCards.svelte';
   import CardLists from './components/CardLists.svelte';
   import { cardsStore } from './stores/cards.js';
-  import { targetLanguage } from './stores/language.js';
+  import { targetLanguage, getLanguageName } from './stores/language.js';
+  import { loadedDictionaries, currentDictionary as currentDictionaryStore } from './stores/dictionaries.js';
+  
+  // Обновляем данные словаря при переключении
+  $: if (currentDictionary) {
+    const dictCards = {
+      learned: $cardsStore.learned.filter(c => (c.dictionaryId || 'default') === currentDictionary),
+      unlearned: $cardsStore.unlearned.filter(c => (c.dictionaryId || 'default') === currentDictionary),
+      draft: ($cardsStore.draft || []).filter(c => (c.dictionaryId || 'default') === currentDictionary)
+    };
+    loadedDictionaries.updateDictionaryData(currentDictionary, dictCards);
+  }
   
   let currentView = 'study';
   
@@ -20,13 +32,11 @@
   let isLoadingWords = false;
   let currentUserName = '';
   
-  // Загружаем токен, стоимость и имя пользователя из localStorage при старте
-  if (typeof localStorage !== 'undefined') {
-    aiToken = localStorage.getItem('ai_token') || '';
-    totalAiCost = parseFloat(localStorage.getItem('ai_total_cost') || '0');
-    currentUserName = localStorage.getItem('user_name') || '';
-    userName = currentUserName;
-  }
+  // Dictionary selector
+  let showDictionaryDropdown = false;
+  
+  $: dictionaries = $loadedDictionaries;
+  $: currentDictionary = $currentDictionaryStore;
   
   // Обновляем стоимость при открытии модалки
   function openTokenModal() {
@@ -99,12 +109,10 @@
       const data = await response.json();
       
       // Сохраняем язык из файла
+      const fileLanguage = data.language || 'en';
       if (data.language) {
         targetLanguage.set(data.language);
       }
-      
-      // Импортируем слова
-      cardsStore.importCards(data);
       
       // Сохраняем имя пользователя
       currentUserName = userName.trim();
@@ -112,11 +120,189 @@
         localStorage.setItem('user_name', currentUserName);
       }
       
+      // Определяем dictionaryId
+      let dictionaryId;
+      if (fileLanguage === 'en') {
+        dictionaryId = 'default';
+        // Объединяем с 'default' - не сбрасываем карточки
+      } else {
+        dictionaryId = currentUserName;
+        // Другой язык - удаляем только карточки этого словаря перед загрузкой нового
+        cardsStore.resetDictionary(dictionaryId);
+      }
+      
+      // Импортируем слова с dictionaryId
+      cardsStore.importCards(data, dictionaryId);
+      
+      // Проверяем язык и объединяем с 'default' если английский
+      if (fileLanguage === 'en') {
+        // Проверяем, есть ли 'default' в списке
+        const defaultDict = dictionaries.find(d => d.id === 'default');
+        if (!defaultDict) {
+          // Создаем 'default' если его нет
+          const dictName = `${getLanguageName('en')} (default)`;
+          loadedDictionaries.addDictionary('default', dictName, 'en', false);
+        }
+        
+        // Переключаемся на 'default'
+        currentDictionaryStore.set('default');
+      } else {
+        // Создаем отдельный словарь
+        const dictName = `${currentUserName} (${getLanguageName(fileLanguage)})`;
+        loadedDictionaries.addDictionary(currentUserName, dictName, fileLanguage, false);
+        currentDictionaryStore.set(currentUserName);
+      }
+      
       showUserModal = false;
     } catch (error) {
       userNameError = `Файл "${userName.trim()}.json" не найден`;
     } finally {
       isLoadingWords = false;
+    }
+  }
+  
+  async function loadDictionary(dictId) {
+    if (!dictId) {
+      // Очищаем словарь
+      currentDictionaryStore.set('');
+      showDictionaryDropdown = false;
+      return;
+    }
+    
+    // Проверяем, является ли словарь импортированным или 'default'
+    const dict = dictionaries.find(d => d.id === dictId);
+    if (dict) {
+      // Словарь уже в списке - просто переключаемся (не загружаем заново)
+      currentDictionaryStore.set(dictId);
+      // Устанавливаем язык словаря
+      if (dict.language) {
+        targetLanguage.set(dict.language);
+      }
+      showDictionaryDropdown = false;
+      return;
+    }
+    
+    // Загружаем словарь из /words/
+    isLoadingWords = true;
+    
+    try {
+      const response = await fetch(`/words/${dictId}.json`);
+      
+      if (!response.ok) {
+        throw new Error('Файл не найден');
+      }
+      
+      const data = await response.json();
+      
+      // Сохраняем язык из файла
+      const fileLanguage = data.language || 'en';
+      if (data.language) {
+        targetLanguage.set(data.language);
+      }
+      
+      // Определяем dictionaryId
+      let dictionaryId;
+      if (fileLanguage === 'en') {
+        dictionaryId = 'default';
+        // Объединяем с 'default' - не сбрасываем карточки
+      } else {
+        dictionaryId = dictId;
+        // Другой язык - удаляем только карточки этого словаря перед загрузкой нового
+        cardsStore.resetDictionary(dictionaryId);
+      }
+      
+      // Импортируем слова с dictionaryId
+      cardsStore.importCards(data, dictionaryId);
+      
+      // Проверяем язык и объединяем с 'default' если английский
+      if (fileLanguage === 'en') {
+        // Проверяем, есть ли 'default' в списке
+        const defaultDict = dictionaries.find(d => d.id === 'default');
+        if (!defaultDict) {
+          // Создаем 'default' если его нет
+          const dictName = `${getLanguageName('en')} (default)`;
+          loadedDictionaries.addDictionary('default', dictName, 'en', false);
+        }
+        
+        // Переключаемся на 'default'
+        currentDictionaryStore.set('default');
+      } else {
+        // Создаем отдельный словарь
+        const dictName = `${dictId} (${getLanguageName(fileLanguage)})`;
+        loadedDictionaries.addDictionary(dictId, dictName, fileLanguage, false);
+        
+        // Сохраняем выбранный словарь
+        currentDictionaryStore.set(dictId);
+      }
+      
+      showDictionaryDropdown = false;
+    } catch (error) {
+      console.error('Ошибка загрузки словаря:', error);
+      alert(`Ошибка загрузки словаря "${dictId}"`);
+    } finally {
+      isLoadingWords = false;
+    }
+  }
+  
+  function selectDictionary(dictId) {
+    if (dictId === currentDictionary) {
+      showDictionaryDropdown = false;
+      return;
+    }
+    loadDictionary(dictId);
+  }
+  
+  // Обновляем currentDictionary при изменении словарей, если он пустой
+  $: if (dictionaries.length > 0 && (!currentDictionary || currentDictionary === '')) {
+    const defaultDict = dictionaries.find(d => d.id === 'default');
+    if (defaultDict) {
+      currentDictionaryStore.set('default');
+    } else if (dictionaries.length > 0) {
+      currentDictionaryStore.set(dictionaries[0].id);
+    }
+  }
+  
+  $: currentDictionaryName = dictionaries.find(d => d.id === currentDictionary)?.name || (dictionaries.length > 0 ? 'Выберите словарь' : 'Нет словарей');
+  
+  // Загружаем словарь при старте, если он был сохранен
+  onMount(() => {
+    // При инициализации создаем словарь "Английский (default)", если его нет
+    const defaultDict = dictionaries.find(d => d.id === 'default');
+    if (!defaultDict) {
+      const dictName = `${getLanguageName('en')} (default)`;
+      loadedDictionaries.addDictionary('default', dictName, 'en', false);
+      // Устанавливаем 'default' как активный словарь, если нет другого
+      if (!currentDictionary || currentDictionary === '') {
+        currentDictionaryStore.set('default');
+      }
+    }
+    
+    if (currentDictionary) {
+      // Проверяем, есть ли словарь в списке загруженных
+      const dict = dictionaries.find(d => d.id === currentDictionary);
+      if (dict && (dict.isImported || currentDictionary === 'default')) {
+        // Импортированный словарь или 'default' уже в cardsStore, просто устанавливаем язык
+        if (dict.language) {
+          targetLanguage.set(dict.language);
+        }
+      } else {
+        // Загружаем словарь из /words/
+        loadDictionary(currentDictionary);
+      }
+    } else {
+      // Если нет активного словаря, устанавливаем 'default'
+      currentDictionaryStore.set('default');
+      const dict = dictionaries.find(d => d.id === 'default');
+      if (dict && dict.language) {
+        targetLanguage.set(dict.language);
+      }
+    }
+  });
+  
+  // Закрываем dropdown при клике вне его
+  function handleClickOutside(event) {
+    if (showDictionaryDropdown && !event.target.closest('.dictionary-selector')) {
+      showDictionaryDropdown = false;
     }
   }
   
@@ -128,12 +314,22 @@
     }
   }
   
-  $: totalCards = $cardsStore.learned.length + $cardsStore.unlearned.length + ($cardsStore.draft?.length || 0);
-  $: studyCount = $cardsStore.unlearned.length;
-  $: draftCount = $cardsStore.draft?.length || 0;
+  // Вспомогательная функция для фильтрации карточек по активному словарю
+  const getCardsByDictionary = (cards, dictId) => {
+    return cards.filter(c => (c.dictionaryId || 'default') === dictId);
+  };
+  
+  // Подсчитываем только карточки активного словаря
+  $: activeLearned = getCardsByDictionary($cardsStore.learned, currentDictionary);
+  $: activeUnlearned = getCardsByDictionary($cardsStore.unlearned, currentDictionary);
+  $: activeDraft = getCardsByDictionary($cardsStore.draft || [], currentDictionary);
+  
+  $: totalCards = activeLearned.length + activeUnlearned.length + activeDraft.length;
+  $: studyCount = activeUnlearned.length;
+  $: draftCount = activeDraft.length;
 </script>
 
-<div class="app">
+<div class="app" on:click={handleClickOutside}>
   <div class="background-pattern"></div>
   
   <nav class="navbar">
@@ -174,7 +370,52 @@
           <span class="token-indicator"></span>
         {/if}
       </button>
-      <button class="stat" on:click={() => currentView = 'lists'}>{totalCards} слов</button>
+      <div class="dictionary-selector">
+        <button 
+          class="dictionary-btn" 
+          class:has-dictionary={currentDictionary}
+          on:click|stopPropagation={() => showDictionaryDropdown = !showDictionaryDropdown}
+          title="Выбрать словарь"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+          <span class="dictionary-label">{currentDictionaryName}</span>
+          <svg class="dropdown-arrow" class:open={showDictionaryDropdown} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        
+        {#if showDictionaryDropdown}
+          <div class="dictionary-dropdown" on:click|stopPropagation>
+            {#if dictionaries.length === 0}
+              <div class="dropdown-empty">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                <p>Загрузите словарь или добавьте карточку слова</p>
+              </div>
+            {:else}
+              {#each dictionaries as dict}
+                <button 
+                  class="dropdown-item" 
+                  class:active={currentDictionary === dict.id}
+                  on:click={() => selectDictionary(dict.id)}
+                >
+                  <span>{dict.name}</span>
+                  {#if currentDictionary === dict.id}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  {/if}
+                </button>
+              {/each}
+            {/if}
+          </div>
+        {/if}
+      </div>
     </div>
   </nav>
   
@@ -459,7 +700,14 @@
     gap: 1rem;
   }
   
-  .stat {
+  .dictionary-selector {
+    position: relative;
+  }
+  
+  .dictionary-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     font-size: 0.875rem;
     font-family: inherit;
     color: var(--text-secondary);
@@ -469,12 +717,111 @@
     border: 1px solid var(--border-color);
     cursor: pointer;
     transition: all 0.2s ease;
+    white-space: nowrap;
   }
   
-  .stat:hover {
+  .dictionary-btn:hover {
     border-color: var(--accent-primary);
     color: var(--accent-primary);
     background: var(--hover-bg);
+  }
+  
+  .dictionary-btn.has-dictionary {
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+  }
+  
+  .dictionary-label {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .dropdown-arrow {
+    transition: transform 0.2s ease;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+  
+  .dropdown-arrow.open {
+    transform: rotate(180deg);
+  }
+  
+  .dictionary-dropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    min-width: 200px;
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    z-index: 1000;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: dropdownIn 0.2s ease;
+  }
+  
+  @keyframes dropdownIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .dropdown-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .dropdown-item:last-child {
+    border-bottom: none;
+  }
+  
+  .dropdown-item:hover {
+    background: var(--hover-bg);
+  }
+  
+  .dropdown-item.active {
+    background: var(--hover-bg);
+    color: var(--accent-primary);
+  }
+  
+  .dropdown-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    color: var(--text-secondary);
+  }
+  
+  .dropdown-empty svg {
+    color: var(--text-muted);
+    opacity: 0.5;
+  }
+  
+  .dropdown-empty p {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.4;
   }
   
   .ai-token-btn,

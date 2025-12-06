@@ -1,0 +1,77 @@
+{
+    "language": "pt",
+    "learned": [],
+    "unlearned": [
+        {
+            "id": 1765002000001.1,
+            "word": "cachorro",
+            "translation": "собака",
+            "association": "",
+            "imageUrl": ""
+        },
+        {
+            "id": 1765002000002.2,
+            "word": "gato",
+            "translation": "кошка",
+            "association": "",
+            "imageUrl": ""
+        },
+        {
+            "id": 1765002000003.3,
+            "word": "pássaro",
+            "translation": "птица",
+            "association": "",
+            "imageUrl": ""
+        },
+        {
+            "id": 1765002000004.4,
+            "word": "peixe",
+            "translation": "рыба",
+            "association": "",
+            "imageUrl": ""
+        },
+        {
+            "id": 1765002000005.5,
+            "word": "coelho",
+            "translation": "кролик",
+            "association": "",
+            "imageUrl": ""
+        },
+        {
+            "id": 1765002000006.6,
+            "word": "cavalo",
+            "translation": "лошадь",
+            "association": "",
+            "imageUrl": ""
+        },
+        {
+            "id": 1765002000007.7,
+            "word": "vaca",
+            "translation": "корова",
+            "association": "",
+            "imageUrl": ""
+        },
+        {
+            "id": 1765002000008.8,
+            "word": "ovelha",
+            "translation": "овца",
+            "association": "",
+            "imageUrl": ""
+        },
+        {
+            "id": 1765002000009.9,
+            "word": "porco",
+            "translation": "свинья",
+            "association": "",
+            "imageUrl": ""
+        },
+        {
+            "id": 1765002000010.1,
+            "word": "urso",
+            "translation": "медведь",
+            "association": "",
+            "imageUrl": ""
+        }
+    ],
+    "exportedAt": "2025-12-06T16:45:00.000Z"
+}

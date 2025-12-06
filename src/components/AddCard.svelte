@@ -1,6 +1,7 @@
 <script>
   import { cardsStore } from '../stores/cards.js';
   import { targetLanguage, getLanguageName } from '../stores/language.js';
+  import { loadedDictionaries, currentDictionary as currentDictionaryStore } from '../stores/dictionaries.js';
   
   $: languageName = getLanguageName($targetLanguage);
   
@@ -23,7 +24,25 @@
   
   function handleSubmit() {
     if (word.trim() && translation.trim()) {
-      cardsStore.addCard(word.trim(), translation.trim(), association.trim(), imageUrl.trim());
+      // Получаем активный словарь
+      let activeDict = typeof localStorage !== 'undefined' 
+        ? localStorage.getItem('current_dictionary') || ''
+        : '';
+      
+      // Проверяем, есть ли вообще словари
+      const hasDictionaries = $loadedDictionaries.length > 0;
+      
+      // Если словарей нет или активный словарь не установлен, создаем 'default' и устанавливаем его активным
+      if (!hasDictionaries || !activeDict || activeDict === '') {
+        const dictName = `${getLanguageName('en')} (default)`;
+        loadedDictionaries.addDictionary('default', dictName, 'en', false);
+        currentDictionaryStore.set('default');
+        activeDict = 'default';
+      }
+      
+      const dictionaryId = activeDict || 'default';
+      cardsStore.addCard(word.trim(), translation.trim(), association.trim(), imageUrl.trim(), dictionaryId);
+      
       word = '';
       translation = '';
       association = '';
@@ -74,8 +93,47 @@
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target.result);
+        
+        // Используем имя файла (без расширения) как ID словаря
+        const fileName = file.name.replace(/\.json$/i, '');
+        
+        // Сохраняем язык из файла
+        const fileLanguage = data.language || 'en';
+        if (data.language) {
+          targetLanguage.set(data.language);
+        }
+        
+        // Определяем dictionaryId
+        let dictionaryId;
+        if (fileLanguage === 'en') {
+          dictionaryId = 'default';
+          // Объединяем с 'default' - не сбрасываем карточки
+        } else {
+          dictionaryId = fileName;
+          // Другой язык - удаляем только карточки этого словаря перед импортом нового
+          cardsStore.resetDictionary(dictionaryId);
+        }
+        
+        // Импортируем слова с dictionaryId
         const totalBefore = ($cardsStore.learned?.length || 0) + ($cardsStore.unlearned?.length || 0) + ($cardsStore.draft?.length || 0);
-        cardsStore.importCards(data);
+        cardsStore.importCards(data, dictionaryId);
+        
+        // Проверяем язык и объединяем с 'default' если английский
+        if (fileLanguage === 'en') {
+          // Объединяем с 'default'
+          const defaultDict = $loadedDictionaries.find(d => d.id === 'default');
+          if (!defaultDict) {
+            // Создаем 'default' если его нет
+            const dictName = `${getLanguageName('en')} (default)`;
+            loadedDictionaries.addDictionary('default', dictName, 'en', true);
+          }
+          currentDictionaryStore.set('default');
+        } else {
+          // Другой язык - создаем отдельный словарь
+          const dictName = `${fileName} (${getLanguageName(fileLanguage)})`;
+          loadedDictionaries.addDictionary(fileName, dictName, fileLanguage, true);
+          currentDictionaryStore.set(fileName);
+        }
         
         // Подсчитаем сколько добавлено
         setTimeout(() => {
@@ -109,8 +167,21 @@
       .filter(w => w.length > 0);
     
     if (words.length > 0) {
+      // Получаем активный словарь
+      const activeDict = typeof localStorage !== 'undefined' 
+        ? localStorage.getItem('current_dictionary') || 'default'
+        : 'default';
+      
+      // Если словаря нет, создаем 'default' и устанавливаем его активным
+      if (!activeDict || activeDict === '') {
+        const dictName = `${getLanguageName('en')} (default)`;
+        loadedDictionaries.addDictionary('default', dictName, 'en', false);
+        currentDictionaryStore.set('default');
+      }
+      
+      const dictionaryId = activeDict || 'default';
       const draftBefore = $cardsStore.draft?.length || 0;
-      cardsStore.addDraftCards(words);
+      cardsStore.addDraftCards(words, dictionaryId);
       
       setTimeout(() => {
         const draftAfter = $cardsStore.draft?.length || 0;
