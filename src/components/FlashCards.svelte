@@ -1,6 +1,10 @@
 <script>
   import { cardsStore } from '../stores/cards.js';
+  import { targetLanguage, getLanguageName, getLanguageNameEn } from '../stores/language.js';
   import { flip } from 'svelte/animate';
+  
+  $: languageName = getLanguageName($targetLanguage);
+  $: languageNameEn = getLanguageNameEn($targetLanguage);
   
   let currentIndex = 0;
   let showTranslation = false;
@@ -111,11 +115,11 @@
     generationError = null;
     generatedSentence = '';
     
-    const prompt = `You are an English language learning assistant. Student level: A1-A2 (beginner).
+    const prompt = `You are a ${languageNameEn} language learning assistant. Student level: A1-A2 (beginner).
 
-Task: Create ONE short and simple sentence in RUSSIAN that will need to be translated into English.
+Task: Create ONE short and simple sentence in RUSSIAN that will need to be translated into ${languageNameEn}.
 
-English word: "${word}"
+${languageNameEn} word: "${word}"
 Russian translation: "${translation}"
 
 Requirements:
@@ -335,7 +339,7 @@ Reply ONLY with the sentence in Russian, without quotes or explanations.`;
   
   // Проверка грамматики через AI
   async function checkGrammar(userSentence, russianSentence, expectedWord) {
-    const prompt = `You are an English language teacher. Check the translation of a sentence from Russian to English.
+    const prompt = `You are a ${languageNameEn} language teacher. Check the translation of a sentence from Russian to ${languageNameEn}.
 
 Russian sentence: "${russianSentence}"
 Student's translation: "${userSentence}"
@@ -607,7 +611,7 @@ Reply ONLY in the specified format, without additional explanations.`;
                 {#if !hasAiToken}
                   Требуется AI токен
                 {:else}
-                  Переведите предложение на английский
+                  Переведите предложение на {languageName.toLowerCase()}
                 {/if}
               </span>
             </div>
@@ -662,7 +666,7 @@ Reply ONLY in the specified format, without additional explanations.`;
                   <img src={currentCard.imageUrl} alt="" class="card-image" />
                 {/if}
                 <div class="card-text-content">
-                  <span class="card-label">Английский</span>
+                  <span class="card-label">{languageName}</span>
                   <h2 class="card-word">{currentCard.word}</h2>
                   {#if currentCard.association}
                     <div class="association">
@@ -686,7 +690,7 @@ Reply ONLY in the specified format, without additional explanations.`;
             <!-- Блок ввода предложения -->
             <div class="sentence-exercise">
               <div class="sentence-prompt" class:loading={isGeneratingSentence} class:error={generationError}>
-                <span class="sentence-label">Переведите на английский:</span>
+                <span class="sentence-label">Переведите на {languageName.toLowerCase()}:</span>
                 {#if isGeneratingSentence}
                   <div class="sentence-loading">
                     <div class="loading-spinner"></div>
@@ -835,7 +839,7 @@ Reply ONLY in the specified format, without additional explanations.`;
             <div class="card-inner">
               <div class="card-front">
                 <div class="card-text-content">
-                  <span class="card-label">Английский</span>
+                  <span class="card-label">{languageName}</span>
                   <h2 class="card-word">{currentCard.word}</h2>
                   <p class="card-hint">Нажмите, чтобы увидеть перевод</p>
                 </div>

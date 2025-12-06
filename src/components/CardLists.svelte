@@ -1,5 +1,8 @@
 <script>
   import { cardsStore } from '../stores/cards.js';
+  import { targetLanguage, getLanguageName } from '../stores/language.js';
+  
+  $: languageName = getLanguageName($targetLanguage);
   
   let activeTab = 'draft';
   let searchQuery = '';
@@ -366,7 +369,7 @@
       <div class="modal-body">
         <div class="input-group">
           <label for="editWord">
-            Слово на английском
+            Слово на {languageName.toLowerCase()}
             <span class="char-count" class:limit={editWord.length >= 35}>{editWord.length}/35</span>
           </label>
           <input 

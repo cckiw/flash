@@ -1,5 +1,8 @@
 <script>
   import { cardsStore } from '../stores/cards.js';
+  import { targetLanguage, getLanguageName } from '../stores/language.js';
+  
+  $: languageName = getLanguageName($targetLanguage);
   
   let word = '';
   let translation = '';
@@ -162,7 +165,7 @@
     <form on:submit|preventDefault={handleSubmit} class="form">
       <div class="input-group">
         <label for="word">
-          Слово на английском
+          Слово на {languageName.toLowerCase()}
           <span class="char-count" class:limit={word.length >= 35}>{word.length}/35</span>
         </label>
         <input 

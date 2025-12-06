@@ -3,6 +3,7 @@
   import FlashCards from './components/FlashCards.svelte';
   import CardLists from './components/CardLists.svelte';
   import { cardsStore } from './stores/cards.js';
+  import { targetLanguage } from './stores/language.js';
   
   let currentView = 'study';
   
@@ -96,6 +97,11 @@
       }
       
       const data = await response.json();
+      
+      // Сохраняем язык из файла
+      if (data.language) {
+        targetLanguage.set(data.language);
+      }
       
       // Импортируем слова
       cardsStore.importCards(data);
