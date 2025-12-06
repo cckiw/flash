@@ -1307,4 +1307,107 @@
     color: var(--success-text);
     margin-right: auto;
   }
+  
+  @media (max-width: 480px) {
+    .lists-container {
+      padding: 1rem;
+      padding-bottom: 0;
+    }
+    
+    .header {
+      margin-bottom: 1rem;
+    }
+    
+    .header-top {
+      gap: 0.5rem;
+      margin-bottom: 0.25rem;
+    }
+    
+    h1 {
+      font-size: 1.25rem;
+    }
+    
+    .subtitle {
+      font-size: 0.8rem;
+    }
+    
+    .export-btn {
+      width: 32px;
+      height: 32px;
+    }
+    
+    .export-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+    
+    .tabs-mobile {
+      margin-bottom: 0.75rem;
+    }
+    
+    .tab-dropdown-btn {
+      padding: 0.75rem 1rem;
+      font-size: 0.875rem;
+    }
+    
+    .dropdown-badge {
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+    }
+    
+    .search-box {
+      margin-bottom: 0.75rem;
+    }
+    
+    .search-input {
+      padding: 0.7rem 0.875rem 0.7rem 2.5rem;
+      font-size: 0.875rem;
+    }
+    
+    .search-icon {
+      width: 16px;
+      height: 16px;
+      left: 0.875rem;
+    }
+    
+    .search-clear {
+      width: 24px;
+      height: 24px;
+      right: 0.625rem;
+    }
+    
+    .search-clear svg {
+      width: 14px;
+      height: 14px;
+    }
+    
+    .card-thumbnail {
+      width: 40px;
+      height: 40px;
+    }
+    
+    .card-thumbnail.missing {
+      width: 40px;
+      height: 40px;
+    }
+    
+    .card-word {
+      font-size: 0.95rem;
+    }
+    
+    .card-actions {
+      flex-direction: column;
+      gap: 0.375rem;
+    }
+    
+    .action-btn {
+      width: 32px;
+      height: 32px;
+    }
+    
+    .action-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
 </style>

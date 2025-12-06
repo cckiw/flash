@@ -2141,5 +2141,89 @@ Reply ONLY in the specified format, without additional explanations.`;
   .stat-item.unlearned {
     color: var(--warning-text);
   }
+  
+  @media (max-width: 480px) {
+    .flashcards-container {
+      padding: 1rem;
+      padding-bottom: 80px;
+    }
+    
+    .header {
+      margin-bottom: 0.75rem;
+    }
+    
+    .header-top {
+      gap: 0.5rem;
+      margin-bottom: 0.25rem;
+    }
+    
+    h1 {
+      font-size: 1.25rem;
+    }
+    
+    .settings-btn {
+      width: 32px;
+      height: 32px;
+    }
+    
+    .settings-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+    
+    .subtitle {
+      font-size: 0.8rem;
+    }
+    
+    .stats {
+      display: none;
+    }
+    
+    .card-area {
+      min-height: 0;
+      flex: 1 1 auto;
+      overflow: visible;
+    }
+    
+    .card {
+      max-width: 100%;
+      height: calc(100vh - 200px);
+      max-height: 400px;
+    }
+    
+    .image-only-card {
+      max-width: 100%;
+      height: calc(100vh - 200px);
+      max-height: 300px;
+    }
+    
+    .translation-card {
+      max-width: 100%;
+      height: calc(100vh - 200px);
+      max-height: 150px;
+    }
+    
+    .translation-front .card-text-content {
+      padding: 1rem;
+    }
+    
+    .translation-front .card-word {
+      font-size: 1rem;
+    }
+    
+    .translation-front .card-label {
+      font-size: 0.65rem;
+    }
+    
+    .action-buttons {
+      margin-top: 1rem;
+      gap: 1.5rem;
+    }
+    
+    .action-btn {
+      width: 56px;
+      height: 56px;
+    }
+  }
 </style>
 

@@ -1247,6 +1247,59 @@
     .navbar {
       padding: 0.75rem 1rem;
     }
+    
+    .dictionary-btn {
+      padding: 0.4rem 0.6rem;
+      font-size: 0.75rem;
+      max-width: 120px;
+    }
+    
+    .dictionary-label {
+      max-width: 80px;
+    }
+    
+    .bottom-nav {
+      padding: 0.5rem 0.75rem 0.75rem;
+      height: auto;
+    }
+    
+    .nav-item {
+      flex-direction: row;
+      gap: 0.25rem;
+      padding: 0;
+      font-size: 0;
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .nav-item span {
+      display: none;
+    }
+    
+    .nav-item.study {
+      margin-bottom: 0;
+      width: auto;
+      height: auto;
+      min-width: auto;
+    }
+    
+    .study-btn-inner {
+      width: 40px;
+      height: 40px;
+    }
+    
+    .nav-item.study .study-btn-inner svg {
+      width: 20px;
+      height: 20px;
+    }
+    
+    .nav-item:not(.study) svg {
+      width: 22px;
+      height: 22px;
+    }
   }
 </style>
 

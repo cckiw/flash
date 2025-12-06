@@ -1015,4 +1015,89 @@ resilient"
     color: var(--accent-primary);
     margin-left: 0.5rem;
   }
+  
+  @media (max-width: 480px) {
+    .add-card-container {
+      padding: 1rem;
+      padding-bottom: 80px;
+    }
+    
+    .header {
+      margin-bottom: 1rem;
+    }
+    
+    .header-top {
+      gap: 0.5rem;
+      margin-bottom: 0.25rem;
+    }
+    
+    h1 {
+      font-size: 1.25rem;
+    }
+    
+    .subtitle {
+      font-size: 0.8rem;
+    }
+    
+    .import-btn {
+      width: 32px;
+      height: 32px;
+    }
+    
+    .import-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+    
+    .card-preview-wrapper {
+      gap: 0.5rem;
+    }
+    
+    .preview-label {
+      font-size: 0.75rem;
+    }
+    
+    .card-preview {
+      border-radius: 16px;
+      border-width: 1.5px;
+      max-height: 200px;
+      aspect-ratio: 3/4;
+    }
+    
+    .card-preview-wrapper {
+      max-width: 150px;
+      margin: 0 auto;
+    }
+    
+    .card-content-preview {
+      display: none;
+    }
+    
+    .card-content-preview {
+      padding: 1rem;
+      gap: 0.25rem;
+    }
+    
+    .preview-word {
+      font-size: 1rem;
+    }
+    
+    .preview-translation {
+      font-size: 0.8rem;
+    }
+    
+    .image-placeholder {
+      gap: 0.375rem;
+      padding: 0.5rem;
+    }
+    
+    .image-placeholder svg {
+      width: 24px;
+      height: 24px;
+    }
+    
+    .image-placeholder span {
+      font-size: 0.65rem;
+    }
+  }
 </style>
