@@ -35,4 +35,5 @@ tasks:
         git commit -m "Release new ${VERSION} version"
         git tag -a "v${VERSION}" -m "Release new ${VERSION} version"
         git push && git push --tags
+        task build
         task deploy
