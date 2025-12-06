@@ -1869,7 +1869,7 @@ Reply ONLY in the specified format, without additional explanations.`;
   .card {
     width: 100%;
     max-width: 340px;
-    height: 400px;
+    height: 300px;
     max-height: 300px;
     perspective: 1000px;
     cursor: grab;
@@ -2189,7 +2189,7 @@ Reply ONLY in the specified format, without additional explanations.`;
     .card {
       max-width: 100%;
       height: calc(100vh - 200px);
-      max-height: 400px;
+      max-height: 300px;
     }
     
     .image-only-card {
