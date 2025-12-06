@@ -923,23 +923,6 @@ Reply ONLY in the specified format, without additional explanations.`;
       <p>Добавьте новые слова или верните карточки из списков</p>
     </div>
   {/if}
-  
-  <div class="stats">
-    <div class="stat-item learned">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="20 6 9 17 4 12"></polyline>
-      </svg>
-      <span>Изучено: {$cardsStore.learned.length}</span>
-    </div>
-    <div class="stat-item unlearned">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="12" y1="8" x2="12" y2="12"></line>
-        <line x1="12" y1="16" x2="12.01" y2="16"></line>
-      </svg>
-      <span>На повторение: {$cardsStore.unlearned.length}</span>
-    </div>
-  </div>
 </div>
 
 <style>
@@ -977,7 +960,7 @@ Reply ONLY in the specified format, without additional explanations.`;
   /* Уменьшаем отступ снизу для Safari */
   @media screen and (-webkit-min-device-pixel-ratio: 0) {
     .flashcards-container .card-area {
-      margin-top: -0.5rem;
+      margin-top: -0.5\rem;
       justify-content: flex-start;
     }
   }
@@ -2126,30 +2109,6 @@ Reply ONLY in the specified format, without additional explanations.`;
     margin: 0;
   }
   
-  .stats {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    margin-top: auto;
-    padding-top: 2rem;
-  }
-  
-  .stat-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-  }
-  
-  .stat-item.learned {
-    color: var(--success-text);
-  }
-  
-  .stat-item.unlearned {
-    color: var(--warning-text);
-  }
-  
   @media (max-width: 480px) {
     .flashcards-container {
       padding: 1rem;
@@ -2181,10 +2140,6 @@ Reply ONLY in the specified format, without additional explanations.`;
     
     .subtitle {
       font-size: 0.8rem;
-    }
-    
-    .stats {
-      display: none;
     }
     
     .card-area {

@@ -350,10 +350,9 @@
     </div>
     
     <div class="nav-stats">
-      <button class="user-btn" class:has-user={hasUserName} on:click={openUserModal} title="Загрузить слова пользователя">
+      <button class="user-btn" class:has-user={hasUserName} on:click={openUserModal} title="Ввести промокод">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-          <circle cx="12" cy="7" r="4"></circle>
+          <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
         </svg>
         {#if hasUserName}
           <span class="user-indicator"></span>
@@ -491,7 +490,7 @@
           </button>
         </div>
         <div class="modal-body">
-          <p class="modal-description">Введите имя для загрузки персональных слов из файла</p>
+          <p class="modal-description">Введите код для загрузки слов из персонального файла</p>
           <div class="token-input-wrapper">
             <input 
               type="text" 
@@ -1147,9 +1146,9 @@
     left: 0;
     right: 0;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: space-around;
-    padding: 0.75rem 1rem 1.25rem;
+    padding: 0.5rem 1rem 0.75rem;
     background: rgba(15, 15, 20, 0.95);
     backdrop-filter: blur(15px);
     border-top: 1px solid var(--border-color);
@@ -1161,16 +1160,21 @@
     flex-direction: column;
     align-items: center;
     gap: 0.375rem;
-    padding: 0.5rem 1rem;
+    padding: 0.375rem 0.75rem;
     background: transparent;
     border: none;
     color: var(--text-muted);
     font-family: inherit;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
     border-radius: 12px;
+  }
+  
+  .nav-item:not(.study) svg {
+    width: 20px;
+    height: 20px;
   }
   
   .nav-item:hover {
@@ -1183,13 +1187,13 @@
   
   .nav-item.study {
     position: relative;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0;
   }
   
   .study-btn-inner {
     position: relative;
-    width: 56px;
-    height: 56px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1201,6 +1205,8 @@
   
   .nav-item.study .study-btn-inner svg {
     stroke: white;
+    width: 22px;
+    height: 22px;
   }
   
   .nav-item.study:hover .study-btn-inner {
