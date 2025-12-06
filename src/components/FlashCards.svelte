@@ -974,6 +974,13 @@ Reply ONLY in the specified format, without additional explanations.`;
     margin-bottom: 1.5rem;
   }
   
+  /* Уменьшаем отступ снизу для Safari */
+  @media screen and (-webkit-min-device-pixel-ratio: 0) {
+    .flashcards-container .header {
+      margin-bottom: 0.75rem;
+    }
+  }
+  
   .header-top {
     display: flex;
     align-items: center;
