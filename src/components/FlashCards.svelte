@@ -1869,8 +1869,7 @@ Reply ONLY in the specified format, without additional explanations.`;
   .card {
     width: 100%;
     max-width: 340px;
-    height: 300px;
-    max-height: 300px;
+    height: 400px;
     perspective: 1000px;
     cursor: grab;
     user-select: none;
