@@ -100,7 +100,8 @@
     userNameError = '';
     
     try {
-      const response = await fetch(`/words/${userName.trim()}.json`);
+      const baseUrl = import.meta.env.BASE_URL;
+      const response = await fetch(`${baseUrl}words/${userName.trim()}.json`);
       
       if (!response.ok) {
         throw new Error('Файл не найден');
@@ -186,7 +187,8 @@
     isLoadingWords = true;
     
     try {
-      const response = await fetch(`/words/${dictId}.json`);
+      const baseUrl = import.meta.env.BASE_URL;
+      const response = await fetch(`${baseUrl}words/${dictId}.json`);
       
       if (!response.ok) {
         throw new Error('Файл не найден');
