@@ -1,0 +1,65 @@
+{
+  "language": "pt",
+  "learned": [],
+  "unlearned": [
+    { "id": 1765001000001.1, "word": "conversar",   "translation": "разговаривать",                    "association": "", "imageUrl": "" },
+    { "id": 1765001000002.2, "word": "descansar",   "translation": "отдыхать",                          "association": "", "imageUrl": "" },
+    { "id": 1765001000003.3, "word": "escolher",    "translation": "выбирать",                          "association": "", "imageUrl": "" },
+    { "id": 1765001000004.4, "word": "precisar de", "translation": "нуждаться в",                       "association": "", "imageUrl": "" },
+    { "id": 1765001000005.5, "word": "conhecer",    "translation": "знать / быть знакомым",             "association": "", "imageUrl": "" },
+    { "id": 1765001000006.6, "word": "lembrar",     "translation": "помнить",                           "association": "", "imageUrl": "" },
+    { "id": 1765001000007.7, "word": "esquecer",    "translation": "забывать",                          "association": "", "imageUrl": "" },
+    { "id": 1765001000008.8, "word": "viajar",      "translation": "путешествовать",                    "association": "", "imageUrl": "" },
+    { "id": 1765001000009.9, "word": "melhorar",    "translation": "улучшать",                          "association": "", "imageUrl": "" },
+    { "id": 1765001000010.1, "word": "piorar",      "translation": "ухудшаться",                        "association": "", "imageUrl": "" },
+
+    { "id": 1765001000011.1, "word": "sentir",      "translation": "чувствовать",                       "association": "", "imageUrl": "" },
+    { "id": 1765001000012.2, "word": "experimentar","translation": "пробовать",                         "association": "", "imageUrl": "" },
+    { "id": 1765001000013.3, "word": "imaginar",    "translation": "представлять",                      "association": "", "imageUrl": "" },
+    { "id": 1765001000014.4, "word": "ajudar",      "translation": "помогать",                          "association": "", "imageUrl": "" },
+    { "id": 1765001000015.5, "word": "tentar",      "translation": "пытаться",                          "association": "", "imageUrl": "" },
+
+    { "id": 1765001000016.6, "word": "demorar",     "translation": "занимать время / задерживаться",    "association": "", "imageUrl": "" },
+    { "id": 1765001000017.7, "word": "chegar",      "translation": "прибывать",                         "association": "", "imageUrl": "" },
+    { "id": 1765001000018.8, "word": "partir",      "translation": "уезжать",                           "association": "", "imageUrl": "" },
+    { "id": 1765001000019.9, "word": "tornar-se",   "translation": "становиться",                       "association": "", "imageUrl": "" },
+    { "id": 1765001000020.1, "word": "preferir",    "translation": "предпочитать",                      "association": "", "imageUrl": "" },
+
+    { "id": 1765001000021.1, "word": "receber",     "translation": "получать",                          "association": "", "imageUrl": "" },
+    { "id": 1765001000022.2, "word": "enviar",      "translation": "отправлять",                        "association": "", "imageUrl": "" },
+    { "id": 1765001000023.3, "word": "aprender",    "translation": "учиться / изучать",                 "association": "", "imageUrl": "" },
+    { "id": 1765001000024.4, "word": "ensinar",     "translation": "преподавать",                       "association": "", "imageUrl": "" },
+    { "id": 1765001000025.5, "word": "cuidar",      "translation": "заботиться",                        "association": "", "imageUrl": "" },
+
+    { "id": 1765001000026.6, "word": "vender",      "translation": "продавать",                         "association": "", "imageUrl": "" },
+    { "id": 1765001000027.7, "word": "comprar",     "translation": "покупать",                          "association": "", "imageUrl": "" },
+    { "id": 1765001000028.8, "word": "gastar",      "translation": "тратить",                           "association": "", "imageUrl": "" },
+    { "id": 1765001000029.9, "word": "poupar",      "translation": "копить / экономить",                "association": "", "imageUrl": "" },
+    { "id": 1765001000030.1, "word": "valer",       "translation": "стоить (иметь ценность)",           "association": "", "imageUrl": "" },
+
+    { "id": 1765001000031.1, "word": "cheiro",      "translation": "запах",                             "association": "", "imageUrl": "" },
+    { "id": 1765001000032.2, "word": "barulho",     "translation": "шум",                               "association": "", "imageUrl": "" },
+    { "id": 1765001000033.3, "word": "silêncio",    "translation": "тишина",                            "association": "", "imageUrl": "" },
+    { "id": 1765001000034.4, "word": "saúde",       "translation": "здоровье",                          "association": "", "imageUrl": "" },
+    { "id": 1765001000035.5, "word": "doença",      "translation": "болезнь",                           "association": "", "imageUrl": "" },
+
+    { "id": 1765001000036.6, "word": "emprego",     "translation": "работа (должность)",                "association": "", "imageUrl": "" },
+    { "id": 1765001000037.7, "word": "salário",     "translation": "зарплата",                          "association": "", "imageUrl": "" },
+    { "id": 1765001000038.8, "word": "reunião",     "translation": "встреча / собрание",                "association": "", "imageUrl": "" },
+    { "id": 1765001000039.9, "word": "tarefa",      "translation": "задача",                            "association": "", "imageUrl": "" },
+    { "id": 1765001000040.1, "word": "horário",     "translation": "расписание",                        "association": "", "imageUrl": "" },
+
+    { "id": 1765001000041.1, "word": "trânsito",    "translation": "пробка / трафик",                   "association": "", "imageUrl": "" },
+    { "id": 1765001000042.2, "word": "estrangeiro", "translation": "иностранец / заграница",            "association": "", "imageUrl": "" },
+    { "id": 1765001000043.3, "word": "costume",     "translation": "привычка",                          "association": "", "imageUrl": "" },
+    { "id": 1765001000044.4, "word": "jeito",       "translation": "способ / манера",                   "association": "", "imageUrl": "" },
+    { "id": 1765001000045.5, "word": "dúvida",      "translation": "сомнение / вопрос",                 "association": "", "imageUrl": "" },
+
+    { "id": 1765001000046.6, "word": "certeza",     "translation": "уверенность",                       "association": "", "imageUrl": "" },
+    { "id": 1765001000047.7, "word": "importante",  "translation": "важный",                            "association": "", "imageUrl": "" },
+    { "id": 1765001000048.8, "word": "lugar",       "translation": "место",                             "association": "", "imageUrl": "" },
+    { "id": 1765001000049.9, "word": "tempo",       "translation": "время / погода",                    "association": "", "imageUrl": "" },
+    { "id": 1765001000050.1, "word": "história",    "translation": "история / рассказ",                 "association": "", "imageUrl": "" }
+  ],
+  "exportedAt": "2025-12-06T16:45:00.000Z"
+}
