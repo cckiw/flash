@@ -976,8 +976,9 @@ Reply ONLY in the specified format, without additional explanations.`;
   
   /* Уменьшаем отступ снизу для Safari */
   @media screen and (-webkit-min-device-pixel-ratio: 0) {
-    .flashcards-container .header {
-      margin-bottom: 0.75rem;
+    .flashcards-container .card-area {
+      margin-top: -1rem;
+      justify-content: flex-start;
     }
   }
   
