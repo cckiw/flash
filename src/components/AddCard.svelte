@@ -165,7 +165,7 @@
     <form on:submit|preventDefault={handleSubmit} class="form">
       <div class="input-group">
         <label for="word">
-          Слово на {languageName.toLowerCase()}
+          Слово ({languageName.toLowerCase()})
           <span class="char-count" class:limit={word.length >= 35}>{word.length}/35</span>
         </label>
         <input 
@@ -428,10 +428,19 @@ resilient"
   
   .header-top {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 1rem;
+    gap: 0.75rem;
     margin-bottom: 0.5rem;
+  }
+  
+  /* Desktop: кнопки рядом с заголовком */
+  @media (min-width: 768px) {
+    .header-top {
+      flex-direction: row;
+      justify-content: center;
+      gap: 1rem;
+    }
   }
   
   h1 {
@@ -565,6 +574,7 @@ resilient"
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
+    margin-bottom: 2rem;
     margin-top: 0.5rem;
   }
   

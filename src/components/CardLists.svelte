@@ -6,6 +6,22 @@
   
   let activeTab = 'draft';
   let searchQuery = '';
+  let showTabDropdown = false;
+  
+  // Названия табов
+  const tabNames = {
+    draft: 'На проработку',
+    unlearned: 'На повторение',
+    learned: 'Изученные'
+  };
+  
+  function selectTab(tab) {
+    activeTab = tab;
+    showTabDropdown = false;
+  }
+  
+  $: activeTabName = tabNames[activeTab];
+  $: activeTabCount = activeTab === 'draft' ? draft.length : activeTab === 'unlearned' ? unlearned.length : learned.length;
   
   // Edit modal state
   let showEditModal = false;
@@ -161,7 +177,36 @@
     <p class="subtitle">Управляйте вашими словами</p>
   </div>
   
-  <div class="tabs">
+  <!-- Mobile dropdown -->
+  <div class="tabs-mobile">
+    <button class="tab-dropdown-btn" on:click={() => showTabDropdown = !showTabDropdown}>
+      <span class="dropdown-label">{activeTabName}</span>
+      <span class="dropdown-badge">{activeTabCount}</span>
+      <svg class="dropdown-arrow" class:open={showTabDropdown} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </button>
+    
+    {#if showTabDropdown}
+      <div class="tab-dropdown-menu">
+        <button class="dropdown-item" class:active={activeTab === 'draft'} on:click={() => selectTab('draft')}>
+          На проработку
+          <span class="badge">{draft.length}</span>
+        </button>
+        <button class="dropdown-item" class:active={activeTab === 'unlearned'} on:click={() => selectTab('unlearned')}>
+          На повторение
+          <span class="badge">{unlearned.length}</span>
+        </button>
+        <button class="dropdown-item" class:active={activeTab === 'learned'} on:click={() => selectTab('learned')}>
+          Изученные
+          <span class="badge">{learned.length}</span>
+        </button>
+      </div>
+    {/if}
+  </div>
+  
+  <!-- Desktop tabs -->
+  <div class="tabs-desktop">
     <button 
       class="tab" 
       class:active={activeTab === 'draft'}
@@ -369,7 +414,7 @@
       <div class="modal-body">
         <div class="input-group">
           <label for="editWord">
-            Слово на {languageName.toLowerCase()}
+            Слово ({languageName.toLowerCase()})
             <span class="char-count" class:limit={editWord.length >= 35}>{editWord.length}/35</span>
           </label>
           <input 
@@ -532,6 +577,149 @@
     color: var(--text-secondary);
     font-size: 1rem;
     margin: 0;
+  }
+  
+  /* Mobile dropdown */
+  .tabs-mobile {
+    display: block;
+    position: relative;
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+  }
+  
+  .tab-dropdown-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 14px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .tab-dropdown-btn:hover {
+    border-color: var(--accent-primary);
+  }
+  
+  .dropdown-label {
+    flex: 1;
+    text-align: left;
+  }
+  
+  .dropdown-badge {
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: 10px;
+  }
+  
+  .dropdown-arrow {
+    transition: transform 0.2s ease;
+    color: var(--text-muted);
+  }
+  
+  .dropdown-arrow.open {
+    transform: rotate(180deg);
+  }
+  
+  .tab-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    left: 0;
+    right: 0;
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 14px;
+    overflow: hidden;
+    z-index: 100;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: dropdownIn 0.2s ease;
+  }
+  
+  @keyframes dropdownIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .dropdown-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .dropdown-item:last-child {
+    border-bottom: none;
+  }
+  
+  .dropdown-item:hover {
+    background: var(--hover-bg);
+  }
+  
+  .dropdown-item.active {
+    background: var(--hover-bg);
+    color: var(--accent-primary);
+  }
+  
+  .dropdown-item .badge {
+    font-size: 0.8rem;
+    padding: 0.15rem 0.5rem;
+    background: var(--hover-bg);
+    border-radius: 8px;
+  }
+  
+  .dropdown-item.active .badge {
+    background: var(--gradient-primary);
+    color: white;
+  }
+  
+  /* Desktop tabs */
+  .tabs-desktop {
+    display: none;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    background: var(--card-bg);
+    padding: 0.5rem;
+    border-radius: 16px;
+    border: 2px solid var(--border-color);
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  
+  @media (min-width: 640px) {
+    .tabs-mobile {
+      display: none;
+    }
+    
+    .tabs-desktop {
+      display: flex;
+    }
   }
   
   .tabs {

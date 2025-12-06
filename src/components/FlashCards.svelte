@@ -20,7 +20,16 @@
   let answerResult = null; // null, 'correct', 'incorrect'
   let showSettings = false;
   
+  // Стандартный режим — когда оба специальных режима выключены
+  $: isStandardMode = !imageOnlyMode && !translationExerciseMode;
+  
   // Функции переключения режимов (взаимоисключающие)
+  function setStandardMode() {
+    imageOnlyMode = false;
+    translationExerciseMode = false;
+    resetCardState();
+  }
+  
   function toggleImageOnlyMode() {
     if (imageOnlyMode) {
       imageOnlyMode = false;
@@ -585,6 +594,14 @@ Reply ONLY in the specified format, without additional explanations.`;
         <h2 class="modal-title">Выбери тип упражнения</h2>
         
         <div class="settings-options">
+          <button class="exercise-option" class:active={isStandardMode} on:click={setStandardMode}>
+            <span class="option-radio" class:checked={isStandardMode}></span>
+            <div class="option-content">
+              <span class="option-title">Flash Cards</span>
+              <span class="option-desc">Классические карточки с переворотом</span>
+            </div>
+          </button>
+          
           <button class="exercise-option" class:active={imageOnlyMode} on:click={toggleImageOnlyMode}>
             <span class="option-radio" class:checked={imageOnlyMode}></span>
             <div class="option-content">
@@ -1278,16 +1295,21 @@ Reply ONLY in the specified format, without additional explanations.`;
   .translation-card {
     width: 100%;
     max-width: 340px;
-    height: 340px;
+    height: 200px !important;
     cursor: default;
+    overflow: hidden;
   }
   
   /* Desktop: wider cards for special modes */
   @media (min-width: 768px) {
-    .image-only-card,
-    .translation-card {
+    .image-only-card {
       max-width: 420px;
       height: 420px;
+    }
+    
+    .translation-card {
+      max-width: 420px;
+      height: 200px !important;
     }
   }
   
@@ -1435,7 +1457,7 @@ Reply ONLY in the specified format, without additional explanations.`;
       max-width: 300px;
       display: flex;
       align-items: center;
-      min-height: 420px;
+      min-height: 200px;
     }
   }
   
@@ -1709,7 +1731,7 @@ Reply ONLY in the specified format, without additional explanations.`;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
-      min-height: 420px;
+      min-height: 200px;
     }
     
     .translation-exercise-layout.with-input .answer-input-area {
