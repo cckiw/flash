@@ -960,7 +960,7 @@ Reply ONLY in the specified format, without additional explanations.`;
   /* Уменьшаем отступ снизу для Safari */
   @media screen and (-webkit-min-device-pixel-ratio: 0) {
     .flashcards-container .card-area {
-      margin-top: -0.5\rem;
+      margin-top: 0.5rem;
       justify-content: flex-start;
     }
   }
@@ -1251,6 +1251,7 @@ Reply ONLY in the specified format, without additional explanations.`;
     align-items: center;
     justify-content: center;
     position: relative;
+    margin-top: 1rem;
   }
   
   /* Desktop layout for translation exercise mode */
@@ -1313,7 +1314,7 @@ Reply ONLY in the specified format, without additional explanations.`;
     
     .translation-card {
       max-width: 420px;
-      height: 200px !important;
+      height: 400px !important;
     }
   }
   
@@ -1413,21 +1414,25 @@ Reply ONLY in the specified format, without additional explanations.`;
   
   .translation-back .association {
     margin-top: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    background: var(--hover-bg);
-    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    background: rgba(99, 102, 241, 0.2);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    border-radius: 12px;
     text-align: center;
   }
   
   .translation-back .association-label {
-    color: var(--text-muted);
     font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
   
   .translation-back .association p {
-    color: var(--text-secondary);
-    margin: 0.25rem 0 0 0;
-    font-size: 0.8rem;
+    color: var(--text-primary);
+    margin: 0.375rem 0 0 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
   }
   
   /* Card back actions */
@@ -1450,18 +1455,16 @@ Reply ONLY in the specified format, without additional explanations.`;
   /* Desktop layout when card is flipped */
   @media (min-width: 768px) {
     .translation-exercise-layout.card-flipped {
-      flex-direction: row;
-      align-items: flex-start;
+      flex-direction: column;
+      align-items: center;
       justify-content: center;
       gap: 2rem;
     }
     
     .translation-exercise-layout.card-flipped .card-back-actions {
       margin-top: 0;
-      max-width: 300px;
-      display: flex;
-      align-items: center;
-      min-height: 200px;
+      max-width: 420px;
+      width: 100%;
     }
   }
   
