@@ -60,6 +60,7 @@
   let isGeneratingSentence = false;
   let generationError = null;
   let showCardBack = false; // Показать обратную сторону карточки (при "не знаю")
+  let displayedCard = null; // Карточка, отображаемая во время переворота
   
   // Проверка ответа
   let isCheckingAnswer = false;
@@ -246,6 +247,9 @@ Reply ONLY with the sentence in Russian, without quotes or explanations.`;
   $: filteredCards = imageOnlyMode ? shuffledCards.filter(c => c.imageUrl) : shuffledCards;
   $: currentCard = filteredCards[currentIndex];
   $: hasCards = filteredCards.length > 0;
+  // Используем сохранённую карточку во время переворота, иначе текущую
+  // Важно: сохраняем карточку, которая отображается во время анимации переворота
+  $: cardToDisplay = (translationExerciseMode && showCardBack && displayedCard) ? displayedCard : currentCard;
   
   function handleDragStart(e) {
     if (imageOnlyMode) return; // Отключаем свайпы в режиме изображений
@@ -297,7 +301,9 @@ Reply ONLY with the sentence in Russian, without quotes or explanations.`;
         return;
       }
       
-      cardsStore.markAsLearned(currentCard.id);
+      const dictId = currentCard.dictionaryId || currentDictionary || 'default';
+      const lang = $targetLanguage || 'en';
+      cardsStore.markAsLearned(currentCard.id, dictId, lang);
       resetCardState();
       if (currentIndex >= filteredCards.length - 1) {
         currentIndex = Math.max(0, filteredCards.length - 2);
@@ -313,7 +319,9 @@ Reply ONLY with the sentence in Russian, without quotes or explanations.`;
       shuffledCards = [...shuffledCards.filter(c => c.id !== cardToMove.id), cardToMove];
       
       // Обновляем store
-      cardsStore.markAsUnlearned(cardToMove.id);
+      const dictId = cardToMove.dictionaryId || currentDictionary || 'default';
+      const lang = $targetLanguage || 'en';
+      cardsStore.markAsUnlearned(cardToMove.id, dictId, lang);
       
       resetCardState();
       
@@ -339,20 +347,48 @@ Reply ONLY with the sentence in Russian, without quotes or explanations.`;
     grammarCorrection = null;
     userSentenceWithError = null;
     showCardBack = false;
+    displayedCard = null;
   }
   
   function skipCard() {
     if (currentCard) {
       // В режиме перевода предложения — сначала показываем обратную сторону
       if (translationExerciseMode && !showCardBack) {
+        displayedCard = currentCard; // Сохраняем карточку для отображения во время переворота
         showCardBack = true;
+        return;
+      }
+      
+      // Если карточка перевёрнута, ждём завершения анимации перед переходом к следующей
+      if (translationExerciseMode && showCardBack) {
+        // Анимация переворота длится 0.6 секунды, ждём её завершения
+        const cardToMove = displayedCard || currentCard;
+        // Перемещаем карточку в конец списка сразу, но продолжаем показывать displayedCard
+        shuffledCards = [...shuffledCards.filter(c => c.id !== cardToMove.id), cardToMove];
+        const dictId = cardToMove.dictionaryId || currentDictionary || 'default';
+        const lang = $targetLanguage || 'en';
+        cardsStore.markAsUnlearned(cardToMove.id, dictId, lang);
+        
+        // Ждём завершения анимации перед переходом к следующей карточке
+        setTimeout(() => {
+          resetCardState();
+          displayedCard = null; // Сбрасываем сохранённую карточку
+          if (currentIndex >= filteredCards.length - 1) {
+            currentIndex = 0;
+          } else {
+            // Индекс уже указывает на следующую карточку благодаря перемещению в конец
+          }
+        }, 600); // Ждём завершения анимации переворота (0.6s)
         return;
       }
       
       const cardToMove = currentCard;
       shuffledCards = [...shuffledCards.filter(c => c.id !== cardToMove.id), cardToMove];
-      cardsStore.markAsUnlearned(cardToMove.id);
+      const dictId = cardToMove.dictionaryId || currentDictionary || 'default';
+      const lang = $targetLanguage || 'en';
+      cardsStore.markAsUnlearned(cardToMove.id, dictId, lang);
       resetCardState();
+      displayedCard = null;
       if (currentIndex >= filteredCards.length - 1) {
         currentIndex = 0;
       }
@@ -444,7 +480,9 @@ Reply ONLY in the specified format, without additional explanations.`;
       setTimeout(() => {
         const cardToMove = currentCard;
         shuffledCards = [...shuffledCards.filter(c => c.id !== cardToMove.id), cardToMove];
-        cardsStore.markAsUnlearned(cardToMove.id);
+        const dictId = cardToMove.dictionaryId || currentDictionary || 'default';
+        const lang = $targetLanguage || 'en';
+        cardsStore.markAsUnlearned(cardToMove.id, dictId, lang);
         if (currentIndex >= filteredCards.length - 1) {
           currentIndex = 0;
         }
@@ -467,7 +505,9 @@ Reply ONLY in the specified format, without additional explanations.`;
         sentenceResult = 'correct';
         
         setTimeout(() => {
-          cardsStore.markAsLearned(currentCard.id);
+          const dictId = currentCard.dictionaryId || currentDictionary || 'default';
+          const lang = $targetLanguage || 'en';
+          cardsStore.markAsLearned(currentCard.id, dictId, lang);
           if (currentIndex >= filteredCards.length - 1) {
             currentIndex = Math.max(0, filteredCards.length - 2);
           }
@@ -491,7 +531,9 @@ Reply ONLY in the specified format, without additional explanations.`;
       // При ошибке API считаем ответ правильным (чтобы не блокировать пользователя)
       sentenceResult = 'correct';
       setTimeout(() => {
-        cardsStore.markAsLearned(currentCard.id);
+        const dictId = currentCard.dictionaryId || currentDictionary || 'default';
+        const lang = $targetLanguage || 'en';
+        cardsStore.markAsLearned(currentCard.id, dictId, lang);
         if (currentIndex >= filteredCards.length - 1) {
           currentIndex = Math.max(0, filteredCards.length - 2);
         }
@@ -525,7 +567,9 @@ Reply ONLY in the specified format, without additional explanations.`;
     if (currentCard) {
       const cardToMove = currentCard;
       shuffledCards = [...shuffledCards.filter(c => c.id !== cardToMove.id), cardToMove];
-      cardsStore.markAsUnlearned(cardToMove.id);
+      const dictId = cardToMove.dictionaryId || currentDictionary || 'default';
+      const lang = $targetLanguage || 'en';
+      cardsStore.markAsUnlearned(cardToMove.id, dictId, lang);
       if (currentIndex >= filteredCards.length - 1) {
         currentIndex = 0;
       }
@@ -651,17 +695,18 @@ Reply ONLY in the specified format, without additional explanations.`;
     </div>
   {/if}
   
-  {#if hasCards && currentCard}
+  {#if hasCards && cardToDisplay}
     <div class="card-area" class:translation-mode={translationExerciseMode && showSentenceInput}>
       {#if translationExerciseMode}
         <!-- Режим "перевод предложения" -->
         <div class="translation-exercise-layout" class:with-input={showSentenceInput} class:card-flipped={showCardBack}>
+          {#key cardToDisplay?.id}
           <div class="card translation-card" class:correct={sentenceResult === 'correct'} class:incorrect={sentenceResult === 'incorrect'} class:flipped={showCardBack}>
             <div class="card-inner">
               <div class="card-front translation-front">
                 <div class="card-text-content">
                   <span class="card-label">Перевод</span>
-                  <h2 class="card-word">{currentCard.translation}</h2>
+                  <h2 class="card-word">{cardToDisplay.translation}</h2>
                 </div>
                 {#if sentenceResult && sentenceResult !== 'grammar_error'}
                   <div class="answer-overlay" 
@@ -691,23 +736,24 @@ Reply ONLY in the specified format, without additional explanations.`;
                   </div>
                 {/if}
               </div>
-              <div class="card-back translation-back" class:has-image={currentCard.imageUrl}>
-                {#if currentCard.imageUrl}
-                  <img src={currentCard.imageUrl} alt="" class="card-image" />
+              <div class="card-back translation-back" class:has-image={cardToDisplay.imageUrl}>
+                {#if cardToDisplay.imageUrl}
+                  <img src={cardToDisplay.imageUrl} alt="" class="card-image" />
                 {/if}
                 <div class="card-text-content">
                   <span class="card-label">{languageName}</span>
-                  <h2 class="card-word">{currentCard.word}</h2>
-                  {#if currentCard.association}
+                  <h2 class="card-word">{cardToDisplay.word}</h2>
+                  {#if cardToDisplay.association}
                     <div class="association">
                       <span class="association-label">Ассоциация:</span>
-                      <p>{currentCard.association}</p>
+                      <p>{cardToDisplay.association}</p>
                     </div>
                   {/if}
                 </div>
               </div>
             </div>
           </div>
+          {/key}
           
           {#if showCardBack}
             <!-- Кнопка продолжить после просмотра обратной стороны -->
