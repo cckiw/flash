@@ -32,6 +32,7 @@
   let editAssociation = '';
   let editImageUrl = '';
   let imageError = false;
+  let allowWithoutImage = false; // Чекбокс "без изображения"
   
   // Original values to track changes
   let originalWord = '';
@@ -77,7 +78,10 @@
   }
   
   function deleteCard(cardId) {
-    cardsStore.deleteCard(cardId, activeTab);
+    const card = [...draft, ...unlearned, ...learned].find(c => c.id === cardId);
+    const dictId = card?.dictionaryId || currentDictionary || 'default';
+    const lang = $targetLanguage || 'en';
+    cardsStore.deleteCard(cardId, activeTab, dictId, lang);
   }
   
   function openEditModal(card) {
@@ -86,6 +90,7 @@
     editTranslation = card.translation || '';
     editAssociation = card.association || '';
     editImageUrl = card.imageUrl || '';
+    allowWithoutImage = false; // Сбрасываем чекбокс
     
     // Save original values
     originalWord = card.word;
@@ -105,37 +110,44 @@
     }
     showEditModal = false;
     editingCard = null;
+    allowWithoutImage = false; // Сбрасываем чекбокс
   }
   
   function forceCloseEditModal() {
     showEditModal = false;
     editingCard = null;
+    allowWithoutImage = false; // Сбрасываем чекбокс
   }
   
   function saveEdit() {
     if (editWord.trim() && editingCard) {
+      const dictId = editingCard.dictionaryId || currentDictionary || 'default';
+      const lang = $targetLanguage || 'en';
+      
       if (activeTab === 'draft') {
         // Для draft карточек используем специальный метод
+        // Передаём флаг allowWithoutImage, если чекбокс активирован и изображения нет
+        const shouldAllowWithoutImage = allowWithoutImage && !editImageUrl.trim();
         cardsStore.editDraftCard(editingCard.id, {
           word: editWord.trim(),
           translation: editTranslation.trim(),
           association: editAssociation.trim(),
           imageUrl: editImageUrl.trim()
-        });
+        }, lang, shouldAllowWithoutImage);
       } else if (editTranslation.trim()) {
         cardsStore.editCard(editingCard.id, activeTab, {
           word: editWord.trim(),
           translation: editTranslation.trim(),
           association: editAssociation.trim(),
           imageUrl: editImageUrl.trim()
-        });
+        }, dictId, lang);
       }
       forceCloseEditModal();
     }
   }
   
   function isCardReady(card) {
-    return card.translation?.trim() && card.imageUrl?.trim();
+    return card.translation?.trim();
   }
   
   function handleImageError() {
@@ -476,7 +488,7 @@
         <div class="input-group">
           <label for="editImageUrl">
             Изображение 
-            <span class="optional">(URL)</span>
+            <span class="optional">(необязательно)</span>
           </label>
           <input 
             id="editImageUrl"
@@ -513,11 +525,24 @@
               </svg>
             </button>
           </div>
+        {:else if activeTab === 'draft'}
+          <!-- Чекбокс "без изображения" только для карточек из "на проработку" -->
+          <div class="checkbox-group">
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                bind:checked={allowWithoutImage}
+                class="checkbox-input"
+              />
+              <span class="checkbox-custom"></span>
+              <span class="checkbox-text">Активировать без изображения</span>
+            </label>
+          </div>
         {/if}
       </div>
       
       <div class="modal-actions">
-        {#if activeTab === 'draft' && editTranslation.trim() && editImageUrl.trim()}
+        {#if activeTab === 'draft' && editTranslation.trim() && (editImageUrl.trim() || allowWithoutImage)}
           <span class="ready-hint">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="20 6 9 17 4 12"></polyline>
@@ -1409,5 +1434,55 @@
       width: 16px;
       height: 16px;
     }
+  }
+  
+  /* Checkbox styles */
+  .checkbox-group {
+    margin-top: 0.75rem;
+  }
+  
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    user-select: none;
+  }
+  
+  .checkbox-label input {
+    display: none;
+  }
+  
+  .checkbox-custom {
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+  
+  .checkbox-label input:checked + .checkbox-custom {
+    background: var(--gradient-primary);
+    border-color: var(--accent-primary);
+  }
+  
+  .checkbox-label input:checked + .checkbox-custom::after {
+    content: '';
+    width: 6px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    margin-bottom: 2px;
+  }
+  
+  .checkbox-text {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    font-weight: 500;
   }
 </style>

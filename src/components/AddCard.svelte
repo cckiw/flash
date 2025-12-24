@@ -41,7 +41,8 @@
       }
       
       const dictionaryId = activeDict || 'default';
-      cardsStore.addCard(word.trim(), translation.trim(), association.trim(), imageUrl.trim(), dictionaryId);
+      const currentLanguage = $targetLanguage || 'en';
+      cardsStore.addCard(word.trim(), translation.trim(), association.trim(), imageUrl.trim(), dictionaryId, currentLanguage);
       
       word = '';
       translation = '';
@@ -180,8 +181,9 @@
       }
       
       const dictionaryId = activeDict || 'default';
+      const currentLanguage = $targetLanguage || 'en';
       const draftBefore = $cardsStore.draft?.length || 0;
-      cardsStore.addDraftCards(words, dictionaryId);
+      cardsStore.addDraftCards(words, dictionaryId, currentLanguage);
       
       setTimeout(() => {
         const draftAfter = $cardsStore.draft?.length || 0;
@@ -366,7 +368,10 @@
       
       <div class="modal-body">
         <div class="input-group">
-          <label for="imageUrl">Ссылка на изображение</label>
+          <label for="imageUrl">
+            Ссылка на изображение
+            <span class="optional">(необязательно)</span>
+          </label>
           <input 
             id="imageUrl"
             type="url" 

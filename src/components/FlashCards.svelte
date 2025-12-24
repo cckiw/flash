@@ -139,20 +139,28 @@
     generationError = null;
     generatedSentence = '';
     
+    // Если слово начинается с "to " (инфинитив), удаляем "to" для использования в предложении
+    const wordForSentence = word.toLowerCase().startsWith('to ') 
+      ? word.substring(3).trim() 
+      : word;
+    
     const prompt = `You are a ${languageNameEn} language learning assistant. Student level: A1-A2 (beginner).
 
 Task: Create ONE short and simple sentence in RUSSIAN that will need to be translated into ${languageNameEn}.
 
 ${languageNameEn} word: "${word}"
+Base form for sentence: "${wordForSentence}"
 Russian translation: "${translation}"
 
 Requirements:
 - The sentence must be in Russian
 - The sentence must contain the word "${translation}" (or its form)
+- The English translation MUST use the word "${wordForSentence}" (or its conjugated form like "adore", "adores", "adored", etc.)
 - Length: 3-10 words
 - Simple A1-A2 level grammar
 - Use simple tenses (Present Simple, Past Simple, Future Simple, Present Continuous, Present Perfect)
 - Avoid complex constructions
+- IMPORTANT: The sentence must be translatable using "${wordForSentence}" in its appropriate form
 
 Reply ONLY with the sentence in Russian, without quotes or explanations.`;
 
@@ -406,22 +414,46 @@ Reply ONLY with the sentence in Russian, without quotes or explanations.`;
   
   // Проверка грамматики через AI
   async function checkGrammar(userSentence, russianSentence, expectedWord) {
+    // Если слово начинается с "to " (инфинитив), удаляем "to" для проверки
+    // так как в предложении глагол будет использоваться в личной форме
+    let wordForCheck = expectedWord.toLowerCase();
+    if (wordForCheck.startsWith('to ')) {
+      wordForCheck = wordForCheck.substring(3).trim();
+    }
+    
     const prompt = `You are a ${languageNameEn} language teacher. Check the translation of a sentence from Russian to ${languageNameEn}.
 
 Russian sentence: "${russianSentence}"
 Student's translation: "${userSentence}"
-Key word that must be used: "${expectedWord}"
+Key word that must be used: "${wordForCheck}" (base form, can be conjugated: "${wordForCheck}", "${wordForCheck}s", "${wordForCheck}d", etc.)
 
-Task: check the grammar of the sentence and its correspondence to the translation.
-- DO NOT check punctuation (commas, periods)
-- Check only grammatical errors (tenses, articles, word order, word forms)
+CRITICAL RULES:
+1. IGNORE ALL PUNCTUATION MARKS completely - punctuation differences are NEVER errors
+2. Only report REAL grammatical or meaning errors
+3. If the sentence is CORRECT, reply ONLY with "0" - do NOT create false errors
+4. Do NOT mark correct parts of the sentence as errors
+5. Do NOT invent errors that don't exist
+6. Be VERY careful - only report errors if you are CERTAIN they exist
+
+Task: check ONLY the grammar and meaning of the sentence:
+- MANDATORY: The translation MUST contain the key word "${wordForCheck}" (or its conjugated form)
+- IGNORE punctuation completely - answers with or without punctuation marks are equally correct
+- Check only REAL grammatical errors (tenses, articles, word order, word forms, spelling)
 - Check that the meaning matches the translation
+- If the sentence is correct, reply with "0"
 
 Response format:
-- If the sentence is grammatically correct and conveys the meaning — reply only: 0
-- If there are errors — reply in this format:
+- If the sentence is grammatically correct and conveys the meaning (ignoring punctuation) — reply ONLY: 0
+- If there are REAL grammatical or meaning errors (NOT punctuation) — reply in this format:
 ERROR: [part of the sentence with the error]
 CORRECTION: [correct version of the entire sentence]
+
+IMPORTANT: Before reporting an error, double-check:
+1. Is the sentence actually wrong, or is it correct?
+2. Am I marking a correct part as an error?
+3. Is this a punctuation issue (which should be ignored)?
+
+If the sentence is correct, reply ONLY: 0
 
 Reply ONLY in the specified format, without additional explanations.`;
 
@@ -470,13 +502,97 @@ Reply ONLY in the specified format, without additional explanations.`;
     if (!currentCard || !sentenceAnswer.trim()) return;
     
     const userInput = sentenceAnswer.trim();
-    const expectedWord = currentCard.word.toLowerCase();
+    let expectedWord = currentCard.word.toLowerCase();
     
-    // Шаг 1: Проверяем наличие ключевого слова на клиенте
-    // Ищем слово целиком (с учётом форм слова - базовая проверка)
-    const userInputLower = userInput.toLowerCase();
-    const wordRegex = new RegExp(`\\b${expectedWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\w*\\b`, 'i');
-    const hasCorrectWord = wordRegex.test(userInputLower);
+    // Если слово начинается с "to " (инфинитив), удаляем "to" для проверки
+    // так как в предложении глагол будет использоваться в личной форме
+    if (expectedWord.startsWith('to ')) {
+      expectedWord = expectedWord.substring(3).trim();
+    }
+    
+    // Шаг 1: Проверяем наличие ключевого слова/фразы на клиенте
+    // Ищем слово или фразу целиком (с учётом форм слова - базовая проверка)
+    // Сравниваем все в нижнем регистре
+    
+    // Нормализуем апострофы (разные типы апострофов: ', ', `, и другие Unicode варианты)
+    const normalizeApostrophes = (str) => {
+      if (!str) return str;
+      // Нормализуем все типы апострофов к стандартному '
+      // Включаем все возможные варианты: U+0027, U+2018, U+2019, U+201B, U+2032, U+2035, U+0060
+      // Используем более широкий паттерн для захвата всех возможных вариантов апострофов
+      return str
+        .replace(/[''`´]/g, "'") // Прямые замены известных символов
+        .replace(/[\u2018\u2019\u201B\u2032\u2035]/g, "'"); // Unicode варианты
+    };
+    
+    // Нормализуем апострофы сразу при обработке входных данных
+    const userInputLower = normalizeApostrophes(userInput.toLowerCase().trim());
+    const expectedWordLower = normalizeApostrophes(expectedWord.toLowerCase().trim());
+    
+    let hasCorrectWord = false;
+    
+    // Если ожидаемое слово содержит пробелы (фраза), проверяем наличие всей фразы
+    if (expectedWordLower.includes(' ')) {
+      // Удаляем знаки препинания из обеих строк для сравнения (но сохраняем апострофы)
+      // Нормализуем апострофы перед удалением знаков препинания
+      const userInputClean = normalizeApostrophes(userInputLower.replace(/[.,!?;:]/g, ''));
+      const expectedPhraseClean = normalizeApostrophes(expectedWordLower.replace(/[.,!?;:]/g, ''));
+      
+      // Нормализуем пробелы (множественные пробелы -> один) и еще раз нормализуем апострофы
+      const normalizedUserInput = normalizeApostrophes(userInputClean.replace(/\s+/g, ' ').trim());
+      const normalizedExpectedPhrase = normalizeApostrophes(expectedPhraseClean.replace(/\s+/g, ' ').trim());
+      
+      // Проверяем простое вхождение фразы - самый простой и надежный способ
+      if (normalizedUserInput.includes(normalizedExpectedPhrase)) {
+        hasCorrectWord = true;
+      } else {
+        // Если простое вхождение не сработало, проверяем по словам
+        // Разбиваем фразу на слова и проверяем их последовательность
+        const expectedWords = normalizedExpectedPhrase.split(/\s+/)
+          .map(w => normalizeApostrophes(w.trim()))
+          .filter(w => w.length > 0);
+        const userWords = normalizedUserInput.split(/\s+/)
+          .map(w => normalizeApostrophes(w.trim()))
+          .filter(w => w.length > 0);
+      
+        // Ищем последовательность слов фразы в ответе пользователя
+        // Упрощенная проверка: просто проверяем точное совпадение всех слов подряд
+        for (let i = 0; i <= userWords.length - expectedWords.length; i++) {
+          let allMatch = true;
+          
+          for (let j = 0; j < expectedWords.length; j++) {
+            if (i + j >= userWords.length) {
+              allMatch = false;
+              break;
+            }
+            
+            const expectedWordPart = normalizeApostrophes(expectedWords[j]);
+            const userWord = normalizeApostrophes(userWords[i + j]);
+            
+            // Для всех слов требуем точное совпадение после нормализации
+            // Это гарантирует, что слова с апострофами будут найдены правильно
+            if (expectedWordPart !== userWord) {
+              allMatch = false;
+              break;
+            }
+          }
+          
+          if (allMatch) {
+            hasCorrectWord = true;
+            break;
+          }
+        }
+      }
+    } else {
+      // Одно слово - проверяем как раньше
+      const words = userInputLower.split(/\s+/).map(w => w.replace(/[.,!?;:]/g, ''));
+      hasCorrectWord = words.some(word => {
+        // Проверяем точное совпадение или начало слова совпадает с ожидаемым
+        const normalizedWord = normalizeApostrophes(word);
+        const normalizedExpected = normalizeApostrophes(expectedWordLower);
+        return normalizedWord === normalizedExpected || normalizedWord.startsWith(normalizedExpected);
+      });
+    }
     
     if (!hasCorrectWord) {
       // Слово написано неправильно или отсутствует
@@ -484,19 +600,7 @@ Reply ONLY in the specified format, without additional explanations.`;
       wordError = currentCard.word;
       grammarErrorPart = null;
       grammarCorrection = null;
-      
-      // Карточка на повторение
-      setTimeout(() => {
-        const cardToMove = currentCard;
-        shuffledCards = [...shuffledCards.filter(c => c.id !== cardToMove.id), cardToMove];
-        const dictId = cardToMove.dictionaryId || currentDictionary || 'default';
-        const lang = $targetLanguage || 'en';
-        cardsStore.markAsUnlearned(cardToMove.id, dictId, lang);
-        if (currentIndex >= filteredCards.length - 1) {
-          currentIndex = 0;
-        }
-        resetCardState();
-      }, 3000);
+      // Ждём нажатия кнопки для перехода к следующей карточке
       return;
     }
     
@@ -524,17 +628,82 @@ Reply ONLY in the specified format, without additional explanations.`;
         }, 1500);
       } else {
         // Есть грамматические ошибки - парсим ответ AI
-        sentenceResult = 'grammar_error';
-        userSentenceWithError = userInput;
-        
         // Парсим ответ формата:
         // ERROR: [part with error]
         // CORRECTION: [correct version]
         const errorMatch = result.match(/ERROR:\s*(.+)/i);
         const correctionMatch = result.match(/CORRECTION:\s*(.+)/i);
         
-        grammarErrorPart = errorMatch ? errorMatch[1].trim() : null;
-        grammarCorrection = correctionMatch ? correctionMatch[1].trim() : result;
+        const errorPart = errorMatch ? errorMatch[1].trim() : null;
+        const correction = correctionMatch ? correctionMatch[1].trim() : null;
+        
+        // Проверяем на ложные ошибки AI
+        let isFalseError = false;
+        
+        // Проверка 1: если CORRECTION совпадает с исходным предложением (игнорируя пунктуацию),
+        // значит AI ошибся и на самом деле всё правильно
+        if (correction) {
+          const normalizeForComparison = (str) => {
+            return normalizeApostrophes(str.toLowerCase().replace(/[.,!?;:\s]/g, ''));
+          };
+          
+          const userInputClean = normalizeForComparison(userInput);
+          const correctionClean = normalizeForComparison(correction);
+          
+          if (userInputClean === correctionClean) {
+            isFalseError = true;
+          }
+        }
+        
+        // Проверка 2: если ERROR содержит текст, которого нет в исходном предложении пользователя,
+        // это ложная ошибка (AI придумал ошибку)
+        if (!isFalseError && errorPart) {
+          const normalizeForSearch = (str) => {
+            return normalizeApostrophes(str.toLowerCase().trim());
+          };
+          
+          const userInputNormalized = normalizeForSearch(userInput);
+          const errorPartNormalized = normalizeForSearch(errorPart);
+          
+          // Проверяем, содержит ли исходное предложение пользователя указанную ошибку
+          // Если ERROR содержит слова, которых нет в исходном предложении - это ложная ошибка
+          const errorWords = errorPartNormalized.split(/\s+/).filter(w => w.length > 0);
+          const userWords = userInputNormalized.split(/\s+/).filter(w => w.length > 0);
+          
+          // Если хотя бы одно слово из ERROR отсутствует в исходном предложении - это ложная ошибка
+          const allErrorWordsInUserInput = errorWords.every(errorWord => {
+            return userWords.some(userWord => {
+              const normalizedErrorWord = normalizeApostrophes(errorWord);
+              const normalizedUserWord = normalizeApostrophes(userWord);
+              return normalizedUserWord === normalizedErrorWord || normalizedUserWord.includes(normalizedErrorWord);
+            });
+          });
+          
+          if (!allErrorWordsInUserInput) {
+            isFalseError = true;
+          }
+        }
+        
+        if (isFalseError) {
+          // AI вернул ложную ошибку - считаем правильным
+          sentenceResult = 'correct';
+          setTimeout(() => {
+            const dictId = currentCard.dictionaryId || currentDictionary || 'default';
+            const lang = $targetLanguage || 'en';
+            cardsStore.markAsLearned(currentCard.id, dictId, lang);
+            if (currentIndex >= filteredCards.length - 1) {
+              currentIndex = Math.max(0, filteredCards.length - 2);
+            }
+            resetCardState();
+          }, 1500);
+          return;
+        }
+        
+        // Реальная ошибка - показываем её
+        sentenceResult = 'grammar_error';
+        userSentenceWithError = userInput;
+        grammarErrorPart = errorPart;
+        grammarCorrection = correction || result;
       }
     } catch (error) {
       // При ошибке API считаем ответ правильным (чтобы не блокировать пользователя)
@@ -555,7 +724,9 @@ Reply ONLY in the specified format, without additional explanations.`;
   
   
   function handleSentenceKeydown(e) {
-    if (e.key === 'Enter' && showSentenceInput && !isCheckingAnswer && sentenceResult !== 'grammar_error') {
+    // Для textarea: Ctrl+Enter или Cmd+Enter отправляет форму, обычный Enter - перенос строки
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && showSentenceInput && !isCheckingAnswer && sentenceResult !== 'grammar_error' && sentenceResult !== 'word_error') {
+      e.preventDefault();
       checkSentence();
     }
   }
@@ -571,23 +742,48 @@ Reply ONLY in the specified format, without additional explanations.`;
     return sentence.replace(regex, '<span class="highlighted-error">$1</span>');
   }
   
-  // Продолжить после просмотра ошибки
-  function continueAfterError() {
+  // Продолжить после просмотра ошибки слова
+  function continueAfterWordError() {
     if (currentCard) {
       const cardToMove = currentCard;
+      // Перемещаем карточку в конец списка
       shuffledCards = [...shuffledCards.filter(c => c.id !== cardToMove.id), cardToMove];
       const dictId = cardToMove.dictionaryId || currentDictionary || 'default';
       const lang = $targetLanguage || 'en';
       cardsStore.markAsUnlearned(cardToMove.id, dictId, lang);
+      
+      // Переходим к следующей карточке
+      resetCardState();
+      // После сброса состояния индекс уже указывает на следующую карточку
+      // благодаря перемещению текущей карточки в конец списка
       if (currentIndex >= filteredCards.length - 1) {
         currentIndex = 0;
       }
+    }
+  }
+  
+  // Продолжить после просмотра ошибки грамматики
+  function continueAfterError() {
+    if (currentCard) {
+      const cardToMove = currentCard;
+      // Перемещаем карточку в конец списка
+      shuffledCards = [...shuffledCards.filter(c => c.id !== cardToMove.id), cardToMove];
+      const dictId = cardToMove.dictionaryId || currentDictionary || 'default';
+      const lang = $targetLanguage || 'en';
+      cardsStore.markAsUnlearned(cardToMove.id, dictId, lang);
+      
+      // Переходим к следующей карточке
       resetCardState();
+      // После сброса состояния индекс уже указывает на следующую карточку
+      // благодаря перемещению текущей карточки в конец списка
+      if (currentIndex >= filteredCards.length - 1) {
+        currentIndex = 0;
+      }
     }
   }
   
   function toggleTranslation() {
-    showTranslation = !showTranslation;
+      showTranslation = !showTranslation;
   }
   
   function getCardStyle() {
@@ -611,8 +807,8 @@ Reply ONLY in the specified format, without additional explanations.`;
     <p class="subtitle">
       {#if hasCards}
         Осталось карточек: <span class="count">{filteredCards.length}</span>
-      {:else}
-        Добавьте карточки для начала
+        {:else}
+          Добавьте карточки для начала
       {/if}
     </p>
   </div>
@@ -767,14 +963,10 @@ Reply ONLY in the specified format, without additional explanations.`;
                       <span class="correction-label">Правильный вариант:</span>
                       <p class="correction-text">{grammarCorrection}</p>
                     </div>
-                    <button class="continue-btn" on:click={continueAfterError}>
-                      Продолжить
-                    </button>
                   </div>
                 {:else}
                   <div class="answer-input-area">
-                    <input 
-                      type="text" 
+                    <textarea 
                       class="answer-input sentence-input" 
                       class:correct={sentenceResult === 'correct'}
                       class:incorrect={sentenceResult === 'incorrect'}
@@ -782,6 +974,7 @@ Reply ONLY in the specified format, without additional explanations.`;
                       on:keydown={handleSentenceKeydown}
                       placeholder="Введите перевод..."
                       disabled={sentenceResult !== null || isCheckingAnswer}
+                      rows="1"
                     />
                     <button class="check-btn" on:click={checkSentence} disabled={!sentenceAnswer.trim() || sentenceResult !== null || isCheckingAnswer}>
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -792,9 +985,19 @@ Reply ONLY in the specified format, without additional explanations.`;
                   </div>
                 {/if}
               {/if}
+              {#if sentenceResult === 'word_error'}
+                <button class="skip-sentence-btn continue" on:click={continueAfterWordError}>
+                  Продолжить
+                </button>
+              {:else if sentenceResult === 'grammar_error'}
+                <button class="skip-sentence-btn continue" on:click={continueAfterError}>
+                  Продолжить
+                </button>
+              {:else}
               <button class="skip-sentence-btn" on:click={skipCard} disabled={sentenceResult !== null || isGeneratingSentence || isCheckingAnswer}>
                 Пропустить
               </button>
+              {/if}
             </div>
           {:else}
             <!-- Кнопки Не знаю / Знаю -->
@@ -1357,6 +1560,16 @@ Reply ONLY in the specified format, without additional explanations.`;
     height: 50%;
   }
   
+  @media (max-width: 480px) {
+    .translation-back.has-image .card-image {
+      display: none;
+    }
+    
+    .translation-back.has-image .card-text-content {
+      height: 100%;
+    }
+  }
+  
   .translation-back .card-word {
     color: var(--text-primary);
     font-size: clamp(1rem, 5vw, 1.5rem);
@@ -1461,6 +1674,21 @@ Reply ONLY in the specified format, without additional explanations.`;
     font-family: 'JetBrains Mono', monospace;
   }
   
+  @media (max-width: 480px) {
+    .answer-overlay svg {
+      width: 40px;
+      height: 40px;
+    }
+    
+    .error-title {
+      font-size: 1rem;
+    }
+    
+    .expected-word {
+      font-size: 1rem;
+    }
+  }
+  
   .checking-spinner {
     width: 32px;
     height: 32px;
@@ -1481,18 +1709,30 @@ Reply ONLY in the specified format, without additional explanations.`;
   
   .error-title {
     color: white;
-    font-size: 1rem;
+    font-size: 1.25rem;
     font-weight: 600;
   }
   
   .expected-word {
     color: rgba(255, 255, 255, 0.9);
-    font-size: 0.9rem;
+    font-size: 1.25rem;
   }
   
   .expected-word strong {
     font-family: 'JetBrains Mono', monospace;
     color: white;
+  }
+  
+  .answer-overlay .continue-btn {
+    margin-top: 1rem;
+    background: white;
+    color: var(--danger-text);
+    font-weight: 600;
+  }
+  
+  .answer-overlay .continue-btn:hover {
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
   }
   
   /* Grammar Error Block */
@@ -1585,9 +1825,18 @@ Reply ONLY in the specified format, without additional explanations.`;
     max-width: 340px;
   }
   
+  /* Для sentence-input позволяем расширяться */
+  .sentence-exercise .answer-input-area {
+    max-width: 100%;
+  }
+  
   @media (min-width: 768px) {
     .answer-input-area {
       max-width: 420px;
+    }
+    
+    .sentence-exercise .answer-input-area {
+      max-width: 100%;
     }
   }
   
@@ -1762,8 +2011,27 @@ Reply ONLY in the specified format, without additional explanations.`;
     line-height: 1.5;
   }
   
-  .sentence-input {
-    font-size: 0.95rem;
+  .answer-input.sentence-input {
+    font-size: 0.95rem !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    white-space: normal;
+    text-align: left !important;
+    width: auto;
+    max-width: none;
+    resize: vertical;
+    min-height: 56px;
+    max-height: 200px;
+    overflow-y: auto;
+    line-height: 1.5;
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+  
+  .answer-input.sentence-input:focus {
+    min-height: 80px;
   }
   
   .skip-sentence-btn {
@@ -1789,6 +2057,18 @@ Reply ONLY in the specified format, without additional explanations.`;
   .skip-sentence-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+  }
+  
+  .skip-sentence-btn.continue {
+    background: var(--gradient-primary);
+    color: white;
+    border: none;
+    font-weight: 600;
+  }
+  
+  .skip-sentence-btn.continue:hover {
+    box-shadow: 0 4px 15px var(--accent-glow);
+    transform: translateY(-1px);
   }
   
   .card {
@@ -2046,7 +2326,7 @@ Reply ONLY in the specified format, without additional explanations.`;
   @media (max-width: 480px) {
     .flashcards-container {
       padding: 1rem;
-      padding-bottom: 80px;
+      padding-bottom: 200px;
     }
     
     .header {
@@ -2114,6 +2394,22 @@ Reply ONLY in the specified format, without additional explanations.`;
     .action-btn {
       width: 56px;
       height: 56px;
+    }
+    
+    .card-back-actions {
+      margin-bottom: 3rem;
+    }
+    
+    .sentence-exercise {
+      margin-bottom: 3rem;
+    }
+    
+    .continue-btn {
+      margin-bottom: 2rem;
+    }
+    
+    .skip-sentence-btn.continue {
+      margin-bottom: 2rem;
     }
   }
 </style>

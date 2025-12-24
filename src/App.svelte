@@ -183,10 +183,32 @@
       return;
     }
     
-    // Загружаем словарь из /words/
+    // Сначала пытаемся загрузить с бекенда
     isLoadingWords = true;
     
     try {
+      const dictLanguage = dict?.language || 'en';
+      
+      // Пытаемся загрузить с бекенда
+      try {
+        await cardsStore.loadDictionaryFromBackend(dictId, dictLanguage);
+        
+        // Если загрузка успешна, создаем запись в списке словарей
+        const dictName = `${dictId} (${getLanguageName(dictLanguage)})`;
+        loadedDictionaries.addDictionary(dictId, dictName, dictLanguage, false);
+        currentDictionaryStore.set(dictId);
+        if (dictLanguage) {
+          targetLanguage.set(dictLanguage);
+        }
+        showDictionaryDropdown = false;
+        isLoadingWords = false;
+        return;
+      } catch (backendError) {
+        // Если бекенд не вернул словарь, пробуем загрузить из файла
+        console.log('Словарь не найден на бекенде, пробуем загрузить из файла');
+      }
+      
+      // Загружаем словарь из /words/
       const baseUrl = import.meta.env.BASE_URL;
       const response = await fetch(`${baseUrl}words/${dictId}.json`);
       
@@ -267,7 +289,7 @@
   $: currentDictionaryName = dictionaries.find(d => d.id === currentDictionary)?.name || (dictionaries.length > 0 ? 'Выберите словарь' : 'Нет словарей');
   
   // Загружаем словарь при старте, если он был сохранен
-  onMount(() => {
+  onMount(async () => {
     // При инициализации создаем словарь "Английский (default)", если его нет
     const defaultDict = dictionaries.find(d => d.id === 'default');
     if (!defaultDict) {
@@ -283,18 +305,35 @@
       // Проверяем, есть ли словарь в списке загруженных
       const dict = dictionaries.find(d => d.id === currentDictionary);
       if (dict && (dict.isImported || currentDictionary === 'default')) {
-        // Импортированный словарь или 'default' уже в cardsStore, просто устанавливаем язык
+        // Импортированный словарь или 'default' уже в cardsStore
+        // Пытаемся загрузить с бекенда для синхронизации
+        try {
+          await cardsStore.loadDictionaryFromBackend(currentDictionary, dict.language || 'en');
+        } catch (error) {
+          // Если ошибка - продолжаем работу с локальными данными
+          console.log('Не удалось загрузить словарь с бекенда, используем локальные данные');
+        }
+        
         if (dict.language) {
           targetLanguage.set(dict.language);
         }
       } else {
-        // Загружаем словарь из /words/
+        // Загружаем словарь из /words/ или с бекенда
         loadDictionary(currentDictionary);
       }
     } else {
       // Если нет активного словаря, устанавливаем 'default'
       currentDictionaryStore.set('default');
       const dict = dictionaries.find(d => d.id === 'default');
+      
+      // Пытаемся загрузить 'default' с бекенда
+      try {
+        await cardsStore.loadDictionaryFromBackend('default', 'en');
+      } catch (error) {
+        // Если ошибка - продолжаем работу с локальными данными
+        console.log('Не удалось загрузить словарь с бекенда, используем локальные данные');
+      }
+      
       if (dict && dict.language) {
         targetLanguage.set(dict.language);
       }
@@ -1229,7 +1268,7 @@
     justify-content: center;
     font-size: 0.7rem;
     font-weight: 700;
-    color: white;
+    color: white !important;
     background: #ef4444;
     border-radius: 10px;
     padding: 0 0.375rem;
