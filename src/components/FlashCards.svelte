@@ -15,29 +15,15 @@
   let swipeDirection = null;
   
   // Настройки
-  let imageOnlyMode = false;
   let translationExerciseMode = false;
-  let userAnswer = '';
-  let answerResult = null; // null, 'correct', 'incorrect'
   let showSettings = false;
   
-  // Стандартный режим — когда оба специальных режима выключены
-  $: isStandardMode = !imageOnlyMode && !translationExerciseMode;
+  // Стандартный режим — когда режим перевода выключен
+  $: isStandardMode = !translationExerciseMode;
   
-  // Функции переключения режимов (взаимоисключающие)
+  // Функции переключения режимов
   function setStandardMode() {
-    imageOnlyMode = false;
     translationExerciseMode = false;
-    resetCardState();
-  }
-  
-  function toggleImageOnlyMode() {
-    if (imageOnlyMode) {
-      imageOnlyMode = false;
-    } else {
-      imageOnlyMode = true;
-      translationExerciseMode = false;
-    }
     resetCardState();
   }
   
@@ -47,7 +33,6 @@
       translationExerciseMode = false;
     } else {
       translationExerciseMode = true;
-      imageOnlyMode = false;
     }
     resetCardState();
   }
@@ -243,8 +228,7 @@ Reply ONLY with the sentence in Russian, without quotes or explanations.`;
     }
   }
   
-  // В режиме "только изображения" показываем только карточки с изображениями
-  $: filteredCards = imageOnlyMode ? shuffledCards.filter(c => c.imageUrl) : shuffledCards;
+  $: filteredCards = shuffledCards;
   $: currentCard = filteredCards[currentIndex];
   $: hasCards = filteredCards.length > 0;
   // Используем сохранённую карточку во время переворота, иначе текущую
@@ -252,14 +236,13 @@ Reply ONLY with the sentence in Russian, without quotes or explanations.`;
   $: cardToDisplay = (translationExerciseMode && showCardBack && displayedCard) ? displayedCard : currentCard;
   
   function handleDragStart(e) {
-    if (imageOnlyMode) return; // Отключаем свайпы в режиме изображений
     isDragging = true;
     dragStartX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
     swipeDirection = null;
   }
   
   function handleDragMove(e) {
-    if (!isDragging || imageOnlyMode) return;
+    if (!isDragging) return;
     const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
     dragOffset = clientX - dragStartX;
     
@@ -273,7 +256,7 @@ Reply ONLY with the sentence in Russian, without quotes or explanations.`;
   }
   
   function handleDragEnd() {
-    if (!isDragging || imageOnlyMode) return;
+    if (!isDragging) return;
     isDragging = false;
     
     if (Math.abs(dragOffset) > 100 && currentCard) {
@@ -334,8 +317,6 @@ Reply ONLY with the sentence in Russian, without quotes or explanations.`;
   
   function resetCardState() {
     showTranslation = false;
-    userAnswer = '';
-    answerResult = null;
     showSentenceInput = false;
     sentenceAnswer = '';
     sentenceResult = null;
@@ -578,36 +559,13 @@ Reply ONLY in the specified format, without additional explanations.`;
   }
   
   function toggleTranslation() {
-    if (!imageOnlyMode) {
-      showTranslation = !showTranslation;
-    }
+    showTranslation = !showTranslation;
   }
   
   function getCardStyle() {
     if (!isDragging) return '';
     const rotation = dragOffset * 0.05;
     return `transform: translateX(${dragOffset}px) rotate(${rotation}deg);`;
-  }
-  
-  function checkAnswer() {
-    if (!currentCard || !userAnswer.trim()) return;
-    
-    const correct = userAnswer.trim().toLowerCase() === currentCard.word.toLowerCase();
-    answerResult = correct ? 'correct' : 'incorrect';
-    
-    setTimeout(() => {
-      if (correct) {
-        markKnown();
-      } else {
-        markUnknown();
-      }
-    }, 1000);
-  }
-  
-  function handleKeydown(e) {
-    if (e.key === 'Enter' && imageOnlyMode) {
-      checkAnswer();
-    }
   }
 </script>
 
@@ -625,15 +583,8 @@ Reply ONLY in the specified format, without additional explanations.`;
     <p class="subtitle">
       {#if hasCards}
         Осталось карточек: <span class="count">{filteredCards.length}</span>
-        {#if imageOnlyMode && filteredCards.length < allCards.length}
-          <span class="filter-note">(с изображениями)</span>
-        {/if}
       {:else}
-        {#if imageOnlyMode}
-          Нет карточек с изображениями
-        {:else}
-          Добавьте карточки для начала
-        {/if}
+        Добавьте карточки для начала
       {/if}
     </p>
   </div>
@@ -656,14 +607,6 @@ Reply ONLY in the specified format, without additional explanations.`;
             <div class="option-content">
               <span class="option-title">Flash Cards</span>
               <span class="option-desc">Классические карточки с переворотом</span>
-            </div>
-          </button>
-          
-          <button class="exercise-option" class:active={imageOnlyMode} on:click={toggleImageOnlyMode}>
-            <span class="option-radio" class:checked={imageOnlyMode}></span>
-            <div class="option-content">
-              <span class="option-title">Только изображения</span>
-              <span class="option-desc">Введите слово по изображению</span>
             </div>
           </button>
           
@@ -843,52 +786,6 @@ Reply ONLY in the specified format, without additional explanations.`;
               </button>
             </div>
           {/if}
-        </div>
-      {:else if imageOnlyMode}
-        <!-- Режим "только изображения" -->
-        <div class="card image-only-card" class:correct={answerResult === 'correct'} class:incorrect={answerResult === 'incorrect'}>
-          <div class="card-inner">
-            <div class="card-front has-image image-only">
-              {#if currentCard.imageUrl}
-                <img src={currentCard.imageUrl} alt="" class="card-image-full" />
-              {/if}
-              {#if answerResult}
-                <div class="answer-overlay" class:correct={answerResult === 'correct'} class:incorrect={answerResult === 'incorrect'}>
-                  {#if answerResult === 'correct'}
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    <span>Правильно!</span>
-                  {:else}
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                    <span>{currentCard.word}</span>
-                  {/if}
-                </div>
-              {/if}
-            </div>
-          </div>
-        </div>
-        
-        <div class="answer-input-area">
-          <input 
-            type="text" 
-            class="answer-input" 
-            class:correct={answerResult === 'correct'}
-            class:incorrect={answerResult === 'incorrect'}
-            bind:value={userAnswer}
-            on:keydown={handleKeydown}
-            placeholder="Введите слово..."
-            disabled={answerResult !== null}
-          />
-          <button class="check-btn" on:click={checkAnswer} disabled={!userAnswer.trim() || answerResult !== null}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9 11 12 14 22 4"></polyline>
-              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-            </svg>
-          </button>
         </div>
       {:else}
         <!-- Обычный режим -->
@@ -1323,23 +1220,11 @@ Reply ONLY in the specified format, without additional explanations.`;
       gap: 2rem;
     }
     
-    .translation-exercise-layout.with-input .image-only-card {
-      flex-shrink: 0;
-    }
-    
     .translation-exercise-layout.with-input .sentence-exercise {
       flex: 1;
       max-width: 400px;
       margin-top: 0;
     }
-  }
-  
-  /* Image Only Mode */
-  .image-only-card {
-    width: 100%;
-    max-width: 340px;
-    height: 340px;
-    cursor: default;
   }
   
   /* Translation Exercise Mode Card */
@@ -1353,11 +1238,6 @@ Reply ONLY in the specified format, without additional explanations.`;
   
   /* Desktop: wider cards for special modes */
   @media (min-width: 768px) {
-    .image-only-card {
-      max-width: 420px;
-      height: 420px;
-    }
-    
     .translation-card {
       max-width: 420px;
       height: 400px !important;
@@ -1514,21 +1394,6 @@ Reply ONLY in the specified format, without additional explanations.`;
     }
   }
   
-  .image-only-card .card-inner {
-    pointer-events: auto;
-  }
-  
-  .image-only-card .card-front.image-only {
-    position: relative;
-  }
-  
-  .card-image-full {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    pointer-events: none;
-  }
-  
   .answer-overlay {
     position: absolute;
     top: 0;
@@ -1682,14 +1547,6 @@ Reply ONLY in the specified format, without additional explanations.`;
   @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
-  }
-  
-  .image-only-card.correct .card-inner {
-    box-shadow: 0 0 30px rgba(34, 197, 94, 0.5);
-  }
-  
-  .image-only-card.incorrect .card-inner {
-    box-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
   }
   
   .answer-input-area {
@@ -2198,12 +2055,6 @@ Reply ONLY in the specified format, without additional explanations.`;
     }
     
     .card {
-      max-width: 100%;
-      height: calc(100vh - 200px);
-      max-height: 300px;
-    }
-    
-    .image-only-card {
       max-width: 100%;
       height: calc(100vh - 200px);
       max-height: 300px;
