@@ -21,9 +21,34 @@
   // Стандартный режим — когда режим перевода выключен
   $: isStandardMode = !translationExerciseMode;
   
+  // Сохранение и загрузка режима упражнения
+  const EXERCISE_MODE_KEY = 'flashcards_exercise_mode';
+  
+  function saveExerciseMode() {
+    const mode = translationExerciseMode ? 'translation' : 'standard';
+    localStorage.setItem(EXERCISE_MODE_KEY, mode);
+  }
+  
+  function loadExerciseMode() {
+    const savedMode = localStorage.getItem(EXERCISE_MODE_KEY);
+    const token = localStorage.getItem('ai_token') || '';
+    const hasToken = token && token.length > 0;
+    
+    if (savedMode === 'translation' && hasToken) {
+      translationExerciseMode = true;
+    } else {
+      translationExerciseMode = false;
+      // Если был сохранён режим перевода, но токена нет - сохраняем стандартный режим
+      if (savedMode === 'translation' && !hasToken) {
+        saveExerciseMode();
+      }
+    }
+  }
+  
   // Функции переключения режимов
   function setStandardMode() {
     translationExerciseMode = false;
+    saveExerciseMode();
     resetCardState();
   }
   
@@ -34,6 +59,7 @@
     } else {
       translationExerciseMode = true;
     }
+    saveExerciseMode();
     resetCardState();
   }
   
@@ -80,7 +106,8 @@
   let tokenCheckInterval;
   
   onMount(() => {
-    checkToken();
+    checkToken(); // Сначала загружаем токен
+    loadExerciseMode(); // Затем загружаем сохраненный режим упражнения (проверяет токен внутри)
     window.addEventListener('focus', handleFocus);
     window.addEventListener('storage', handleStorage);
     // Проверяем каждые 500ms когда настройки открыты
@@ -103,6 +130,7 @@
   // Если токен удалён — выключаем режим перевода предложения
   $: if (!hasAiToken && translationExerciseMode) {
     translationExerciseMode = false;
+    saveExerciseMode();
   }
   
   // Генерация предложения через AI
